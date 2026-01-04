@@ -150,7 +150,7 @@
       padding: 0.15rem 0.4rem;
     }
 
-    /* Fonte (source panel) */
+    /* Fonte */
 
     #source-panel {
       flex: 1;
@@ -258,6 +258,25 @@
       justify-content: space-between;
       align-items: center;
       font-size: 0.8rem;
+      gap: 0.5rem;
+    }
+
+    #preview-header-left {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    #preview-open-tab-btn {
+      font-size: 0.7rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 999px;
+      background: #4b5563;
+      border: none;
+    }
+
+    #preview-open-tab-btn:hover {
+      background: #6b7280;
     }
 
     #preview-body {
@@ -367,7 +386,10 @@
 <div id="preview-modal">
   <div id="preview-content">
     <div id="preview-header">
-      <span id="preview-title"></span>
+      <div id="preview-header-left">
+        <span id="preview-title"></span>
+        <button id="preview-open-tab-btn" style="display:none;">Apri in nuova scheda</button>
+      </div>
       <button id="preview-close-btn">Chiudi</button>
     </div>
     <div id="preview-body">
@@ -390,6 +412,7 @@
   let nextNodeId = 1;
   let nextLinkId = 1;
   let connectStartNode = null;
+  let currentPreviewUrl = null;
 
   const deskEl = document.getElementById("desk");
   const connectionsSvg = document.getElementById("connections-svg");
@@ -415,6 +438,7 @@
   const previewImageWrapper = document.getElementById("preview-image-wrapper");
   const previewImage = document.getElementById("preview-image");
   const previewCloseBtn = document.getElementById("preview-close-btn");
+  const previewOpenTabBtn = document.getElementById("preview-open-tab-btn");
 
   function createSourceId() {
     pendingSourceId += 1;
@@ -682,6 +706,8 @@
     previewImageWrapper.style.display = "none";
     previewFrame.src = "about:blank";
     previewImage.src = "";
+    currentPreviewUrl = null;
+    previewOpenTabBtn.style.display = "none";
 
     const mime = (node.mimeType || "").toLowerCase();
     const isLocalImage = node.type === "file" && mime.startsWith("image/");
@@ -691,15 +717,21 @@
       const src = node.type === "file" ? node.objectUrl : node.url;
       previewImageWrapper.style.display = "block";
       previewImage.src = src;
+      currentPreviewUrl = src;
+      previewOpenTabBtn.style.display = "inline-block";
     } else {
+      let src = null;
       if (node.type === "url" && node.url) {
-        previewFrame.src = node.url;
+        src = node.url;
       } else if (node.type === "file" && node.objectUrl) {
-        previewFrame.src = node.objectUrl;
-      } else {
-        previewFrame.src = "about:blank";
+        src = node.objectUrl;
       }
-      previewFrame.style.display = "block";
+      if (src) {
+        previewFrame.src = src;
+        previewFrame.style.display = "block";
+        currentPreviewUrl = src;
+        previewOpenTabBtn.style.display = "inline-block";
+      }
     }
 
     previewModal.classList.add("active");
@@ -709,6 +741,7 @@
     previewModal.classList.remove("active");
     previewFrame.src = "about:blank";
     previewImage.src = "";
+    currentPreviewUrl = null;
   });
 
   previewModal.addEventListener("click", (e) => {
@@ -716,6 +749,13 @@
       previewModal.classList.remove("active");
       previewFrame.src = "about:blank";
       previewImage.src = "";
+      currentPreviewUrl = null;
+    }
+  });
+
+  previewOpenTabBtn.addEventListener("click", () => {
+    if (currentPreviewUrl) {
+      window.open(currentPreviewUrl, "_blank");
     }
   });
 
@@ -780,8 +820,12 @@
   addLinkBtn.addEventListener("click", () => {
     const title = prompt("Titolo del materiale:");
     if (!title) return;
-    const url = prompt("URL (pagina GitHub, Google Drive, YouTube, ecc.):");
+    let url = prompt("URL (pagina web, GitHub, Google Drive, YouTube, ecc.):");
     if (!url) return;
+    url = url.trim();
+    if (!/^https?:\/\//i.test(url)) {
+      url = "https://" + url;
+    }
     const item = {
       id: createSourceId(),
       type: "url",
