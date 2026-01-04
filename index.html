@@ -889,7 +889,6 @@
         links = data.links || [];
         sourceItems = data.sourceItems || [];
 
-        // ricostruisci i contatori dagli id esistenti
         let maxNode = 0;
         let maxLink = 0;
         let maxSource = 0;
@@ -1029,26 +1028,9 @@
   }
 
   function initExample() {
+    // Da ora in poi: niente esempi.
+    // Se c'è qualcosa in localStorage, lo carico; altrimenti lascio tutto vuoto.
     loadFromLocalStorage();
-    if (nodes.length || links.length || sourceItems.length) return;
-
-    sourceItems = [
-      {
-        id: createSourceId(),
-        type: "url",
-        title: "Digitale purpurea – lezione",
-        url: "https://example.com/digitale.html"
-      },
-      {
-        id: createSourceId(),
-        type: "url",
-        title: "Gelsomino notturno – mappa",
-        url: "https://example.com/gelsomino.html"
-      }
-    ];
-    renderSource();
-    renderNodes();
-    renderLinks();
   }
 
   window.addEventListener("resize", renderLinks);
