@@ -185,6 +185,8 @@
     #source-actions {
       display: flex;
       gap: 0.25rem;
+      flex-wrap: wrap;
+      justify-content: flex-end;
     }
 
     #source-actions button {
@@ -212,9 +214,35 @@
       border-color: #4b5563;
     }
 
+    .source-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.25rem;
+      margin-bottom: 0.2rem;
+    }
+
     .source-title {
       font-size: 0.8rem;
       font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .source-delete-btn {
+      font-size: 0.65rem;
+      padding: 0.05rem 0.35rem;
+      border-radius: 999px;
+      border: none;
+      background: #b91c1c;
+      color: white;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .source-delete-btn:hover {
+      background: #991b1b;
     }
 
     .source-url {
@@ -375,6 +403,7 @@
         <div id="source-actions">
           <button id="add-link-btn">+ Link</button>
           <button id="add-file-btn">+ File</button>
+          <button id="clear-sources-btn" class="danger">Svuota fonti</button>
         </div>
       </div>
       <div id="source-list"></div>
@@ -431,6 +460,7 @@
 
   const addLinkBtn = document.getElementById("add-link-btn");
   const addFileBtn = document.getElementById("add-file-btn");
+  const clearSourcesBtn = document.getElementById("clear-sources-btn");
 
   const previewModal = document.getElementById("preview-modal");
   const previewTitle = document.getElementById("preview-title");
@@ -466,9 +496,24 @@
       div.className = "source-item";
       div.dataset.id = item.id;
 
+      const headerRow = document.createElement("div");
+      headerRow.className = "source-header-row";
+
       const title = document.createElement("div");
       title.className = "source-title";
       title.textContent = item.title;
+
+      const deleteBtn = document.createElement("button");
+      deleteBtn.className = "source-delete-btn";
+      deleteBtn.textContent = "✕";
+      deleteBtn.title = "Elimina questa fonte";
+      deleteBtn.addEventListener("click", (e) => {
+        e.stopPropagation(); // non creare nodo
+        deleteSource(item.id);
+      });
+
+      headerRow.appendChild(title);
+      headerRow.appendChild(deleteBtn);
 
       const url = document.createElement("div");
       url.className = "source-url";
@@ -476,9 +521,10 @@
         ? item.url
         : "(file locale) " + item.fileName;
 
-      div.appendChild(title);
+      div.appendChild(headerRow);
       div.appendChild(url);
 
+      // click sulla fonte -> crea un nodo sul desk
       div.addEventListener("click", () => {
         const rect = deskEl.getBoundingClientRect();
         const x = rect.width / 2 - 80;
@@ -623,6 +669,21 @@
     links = links.filter(l => l.from !== nodeId && l.to !== nodeId);
     renderNodes();
     renderLinks();
+    saveToLocalStorageAuto();
+  }
+
+  function deleteSource(sourceId) {
+    if (!confirm("Eliminare questa fonte dalla lista? Le card sul desk resteranno.")) return;
+    sourceItems = sourceItems.filter(s => s.id !== sourceId);
+    renderSource();
+    saveToLocalStorageAuto();
+  }
+
+  function clearSources() {
+    if (!sourceItems.length) return;
+    if (!confirm("Vuoi davvero svuotare tutte le fonti? Le card già sul desk resteranno.")) return;
+    sourceItems = [];
+    renderSource();
     saveToLocalStorageAuto();
   }
 
@@ -801,7 +862,7 @@
   }
 
   function clearDesk() {
-    if (!confirm("Vuoi davvero azzerare il desk?")) return;
+    if (!confirm("Vuoi davvero azzerare il desk (card e connettori)? Le fonti resteranno.")) return;
     nodes = [];
     links = [];
     renderNodes();
@@ -859,6 +920,8 @@
     renderSource();
     saveToLocalStorageAuto();
   });
+
+  clearSourcesBtn.addEventListener("click", clearSources);
 
   function initExample() {
     if (localStorage.getItem("desk-la-fonte")) {
