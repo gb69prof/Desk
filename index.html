@@ -5,11 +5,7 @@
   <title>Desk – La Fonte</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -72,29 +68,15 @@
       cursor: pointer;
     }
 
-    button:hover {
-      background: #6b7280;
-    }
+    button:hover { background: #6b7280; }
 
-    button.primary {
-      background: #2563eb;
-    }
+    button.primary { background: #2563eb; }
+    button.primary:hover { background: #1d4ed8; }
 
-    button.primary:hover {
-      background: #1d4ed8;
-    }
+    button.danger { background: #b91c1c; }
+    button.danger:hover { background: #991b1b; }
 
-    button.danger {
-      background: #b91c1c;
-    }
-
-    button.danger:hover {
-      background: #991b1b;
-    }
-
-    button.toggle-active {
-      background: #10b981;
-    }
+    button.toggle-active { background: #10b981; }
 
     #main {
       flex: 1;
@@ -123,7 +105,6 @@
     #connections-svg {
       position: absolute;
       inset: 0;
-      pointer-events: none;
     }
 
     #desk {
@@ -144,9 +125,7 @@
       touch-action: none;
     }
 
-    .node:active {
-      cursor: grabbing;
-    }
+    .node:active { cursor: grabbing; }
 
     .node-title {
       font-weight: 600;
@@ -281,19 +260,35 @@
       font-size: 0.8rem;
     }
 
+    #preview-body {
+      flex: 1;
+      display: flex;
+      background: #f9fafb;
+    }
+
+    #preview-image-wrapper {
+      flex: 1;
+      display: none;
+      overflow: auto;
+      padding: 0.5rem;
+    }
+
+    #preview-image {
+      max-width: 100%;
+      max-height: 100%;
+      display: block;
+      margin: 0 auto;
+      object-fit: contain;
+    }
+
     #preview-frame {
       flex: 1;
       border: none;
       width: 100%;
-    }
-
-    /* File input nascosto */
-
-    #file-input {
       display: none;
     }
 
-    /* Piccolo helper per responsività */
+    #file-input { display: none; }
 
     @media (max-width: 800px) {
       header {
@@ -363,9 +358,7 @@
           <button id="add-file-btn">+ File</button>
         </div>
       </div>
-      <div id="source-list">
-        <!-- elementi di esempio -->
-      </div>
+      <div id="source-list"></div>
     </aside>
   </div>
 </div>
@@ -377,14 +370,18 @@
       <span id="preview-title"></span>
       <button id="preview-close-btn">Chiudi</button>
     </div>
-    <iframe id="preview-frame"></iframe>
+    <div id="preview-body">
+      <div id="preview-image-wrapper">
+        <img id="preview-image" alt="Anteprima immagine" />
+      </div>
+      <iframe id="preview-frame"></iframe>
+    </div>
   </div>
 </div>
 
 <input type="file" id="file-input" multiple />
 
 <script>
-  // Stato del desk
   let nodes = [];
   let links = [];
   let sourceItems = [];
@@ -415,9 +412,10 @@
   const previewModal = document.getElementById("preview-modal");
   const previewTitle = document.getElementById("preview-title");
   const previewFrame = document.getElementById("preview-frame");
+  const previewImageWrapper = document.getElementById("preview-image-wrapper");
+  const previewImage = document.getElementById("preview-image");
   const previewCloseBtn = document.getElementById("preview-close-btn");
 
-  // Helpers ID
   function createSourceId() {
     pendingSourceId += 1;
     return "source-" + pendingSourceId;
@@ -433,7 +431,10 @@
     return "link-" + nextLinkId;
   }
 
-  // Render fonte
+  function isImageUrl(url) {
+    return /\.(png|jpe?g|gif|webp|svg)$/i.test(url || "");
+  }
+
   function renderSource() {
     sourceListEl.innerHTML = "";
     sourceItems.forEach(item => {
@@ -447,12 +448,13 @@
 
       const url = document.createElement("div");
       url.className = "source-url";
-      url.textContent = item.type === "url" ? item.url : "(file locale) " + item.fileName;
+      url.textContent = item.type === "url"
+        ? item.url
+        : "(file locale) " + item.fileName;
 
       div.appendChild(title);
       div.appendChild(url);
 
-      // click sulla fonte -> crea un nodo sul desk
       div.addEventListener("click", () => {
         const rect = deskEl.getBoundingClientRect();
         const x = rect.width / 2 - 80;
@@ -464,28 +466,28 @@
     });
   }
 
-  // Crea nodo a partire da source
   function createNodeFromSource(sourceId, x, y) {
     const item = sourceItems.find(s => s.id === sourceId);
     if (!item) return;
 
     const node = {
       id: createNodeId(),
-      sourceId: sourceId,
+      sourceId,
       title: item.title,
       x,
       y,
       type: item.type,
       url: item.url || null,
       fileName: item.fileName || null,
-      objectUrl: item.objectUrl || null
+      objectUrl: item.objectUrl || null,
+      mimeType: item.mimeType || null
     };
     nodes.push(node);
     renderNodes();
     renderLinks();
+    saveToLocalStorageAuto();
   }
 
-  // Render nodi
   function renderNodes() {
     deskEl.innerHTML = "";
     nodes.forEach(node => {
@@ -501,9 +503,7 @@
 
       const metaEl = document.createElement("div");
       metaEl.className = "node-meta";
-      metaEl.textContent = node.type === "url"
-        ? "Link"
-        : "File locale";
+      metaEl.textContent = node.type === "url" ? "Link" : "File locale";
 
       const btnContainer = document.createElement("div");
       btnContainer.className = "node-buttons";
@@ -523,17 +523,24 @@
         nodeClickedForConnect(node);
       });
 
+      const deleteBtn = document.createElement("button");
+      deleteBtn.textContent = "✕";
+      deleteBtn.title = "Elimina questa card e i suoi connettori";
+      deleteBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        deleteNode(node.id);
+      });
+
       btnContainer.appendChild(openBtn);
       btnContainer.appendChild(connectBtn);
+      btnContainer.appendChild(deleteBtn);
 
       div.appendChild(titleEl);
       div.appendChild(metaEl);
       div.appendChild(btnContainer);
 
-      // Drag
       makeNodeDraggable(div, node);
 
-      // Click (anche sullo sfondo del nodo)
       div.addEventListener("click", () => {
         if (!connectMode) {
           openNode(node);
@@ -546,7 +553,6 @@
     });
   }
 
-  // Drag nodi con Pointer Events
   function makeNodeDraggable(el, node) {
     let isPointerDown = false;
     let startX = 0;
@@ -587,7 +593,15 @@
     });
   }
 
-  // Modalità collega
+  function deleteNode(nodeId) {
+    if (!confirm("Eliminare questa card e i suoi connettori?")) return;
+    nodes = nodes.filter(n => n.id !== nodeId);
+    links = links.filter(l => l.from !== nodeId && l.to !== nodeId);
+    renderNodes();
+    renderLinks();
+    saveToLocalStorageAuto();
+  }
+
   function nodeClickedForConnect(node) {
     if (!connectMode) return;
     if (!connectStartNode) {
@@ -609,7 +623,6 @@
     }
   }
 
-  // Render connettori
   function renderLinks() {
     const rect = deskEl.getBoundingClientRect();
     connectionsSvg.setAttribute("width", rect.width);
@@ -621,7 +634,7 @@
       const toNode = nodes.find(n => n.id === link.to);
       if (!fromNode || !toNode) return;
 
-      const x1 = fromNode.x + 70; // metà approx
+      const x1 = fromNode.x + 70;
       const y1 = fromNode.y + 30;
       const x2 = toNode.x + 70;
       const y2 = toNode.y + 30;
@@ -634,21 +647,59 @@
       line.setAttribute("stroke", link.color || "#111827");
       line.setAttribute("stroke-width", link.width || 2);
       line.setAttribute("stroke-linecap", "round");
+      line.dataset.id = link.id;
+
+      line.addEventListener("click", (e) => {
+        e.stopPropagation();
+        handleLinkClick(link.id);
+      });
+
       connectionsSvg.appendChild(line);
     });
   }
 
-  // Anteprima nodo (apertura)
+  function handleLinkClick(linkId) {
+    const link = links.find(l => l.id === linkId);
+    if (!link) return;
+
+    const choice = prompt("Connettore:\n1 = cambia colore\n2 = elimina\n(Annulla per uscire)");
+    if (choice === null) return;
+
+    if (choice.trim() === "1") {
+      link.color = colorPicker.value;
+      renderLinks();
+      saveToLocalStorageAuto();
+    } else if (choice.trim() === "2") {
+      links = links.filter(l => l.id !== linkId);
+      renderLinks();
+      saveToLocalStorageAuto();
+    }
+  }
+
   function openNode(node) {
     previewTitle.textContent = node.title;
+    previewFrame.style.display = "none";
+    previewImageWrapper.style.display = "none";
+    previewFrame.src = "about:blank";
+    previewImage.src = "";
 
-    if (node.type === "url" && node.url) {
-      previewFrame.src = node.url;
-    } else if (node.type === "file" && node.objectUrl) {
-      // Prova a mostrare il file locale (pdf/immagine ecc.)
-      previewFrame.src = node.objectUrl;
+    const mime = (node.mimeType || "").toLowerCase();
+    const isLocalImage = node.type === "file" && mime.startsWith("image/");
+    const isRemoteImage = node.type === "url" && isImageUrl(node.url);
+
+    if (isLocalImage || isRemoteImage) {
+      const src = node.type === "file" ? node.objectUrl : node.url;
+      previewImageWrapper.style.display = "block";
+      previewImage.src = src;
     } else {
-      previewFrame.src = "about:blank";
+      if (node.type === "url" && node.url) {
+        previewFrame.src = node.url;
+      } else if (node.type === "file" && node.objectUrl) {
+        previewFrame.src = node.objectUrl;
+      } else {
+        previewFrame.src = "about:blank";
+      }
+      previewFrame.style.display = "block";
     }
 
     previewModal.classList.add("active");
@@ -657,16 +708,17 @@
   previewCloseBtn.addEventListener("click", () => {
     previewModal.classList.remove("active");
     previewFrame.src = "about:blank";
+    previewImage.src = "";
   });
 
   previewModal.addEventListener("click", (e) => {
     if (e.target === previewModal) {
       previewModal.classList.remove("active");
       previewFrame.src = "about:blank";
+      previewImage.src = "";
     }
   });
 
-  // Toolbar: modalità collega
   connectModeBtn.addEventListener("click", () => {
     connectMode = !connectMode;
     connectStartNode = null;
@@ -677,23 +729,14 @@
     }
   });
 
-  // Salvataggio / caricamento
   function saveToLocalStorage() {
-    const data = {
-      nodes,
-      links,
-      sourceItems
-    };
+    const data = { nodes, links, sourceItems };
     localStorage.setItem("desk-la-fonte", JSON.stringify(data));
     alert("Desk salvato.");
   }
 
   function saveToLocalStorageAuto() {
-    const data = {
-      nodes,
-      links,
-      sourceItems
-    };
+    const data = { nodes, links, sourceItems };
     localStorage.setItem("desk-la-fonte", JSON.stringify(data));
   }
 
@@ -721,7 +764,6 @@
     if (!confirm("Vuoi davvero azzerare il desk?")) return;
     nodes = [];
     links = [];
-    // Non tocchiamo la fonte, solo il desk
     renderNodes();
     renderLinks();
     saveToLocalStorageAuto();
@@ -731,12 +773,10 @@
   loadBtn.addEventListener("click", loadFromLocalStorage);
   clearBtn.addEventListener("click", clearDesk);
 
-  // Mostra/nascondi fonte
   toggleSourceBtn.addEventListener("click", () => {
     sourcePanel.classList.toggle("hidden");
   });
 
-  // Aggiungi link alla fonte
   addLinkBtn.addEventListener("click", () => {
     const title = prompt("Titolo del materiale:");
     if (!title) return;
@@ -753,7 +793,6 @@
     saveToLocalStorageAuto();
   });
 
-  // Aggiungi file dal dispositivo
   addFileBtn.addEventListener("click", () => {
     fileInputEl.value = "";
     fileInputEl.click();
@@ -768,7 +807,8 @@
         type: "file",
         title: file.name,
         fileName: file.name,
-        objectUrl
+        objectUrl,
+        mimeType: file.type || ""
       };
       sourceItems.push(item);
     });
@@ -776,7 +816,6 @@
     saveToLocalStorageAuto();
   });
 
-  // Inizializzazione: qualche esempio base
   function initExample() {
     if (localStorage.getItem("desk-la-fonte")) {
       loadFromLocalStorage();
