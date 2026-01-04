@@ -335,7 +335,10 @@
       display: none;
     }
 
-    #file-input { display: none; }
+    #file-input,
+    #load-file-input {
+      display: none;
+    }
 
     @media (max-width: 800px) {
       header {
@@ -431,6 +434,7 @@
 </div>
 
 <input type="file" id="file-input" multiple />
+<input type="file" id="load-file-input" accept=".json,application/json" />
 
 <script>
   let nodes = [];
@@ -447,6 +451,7 @@
   const connectionsSvg = document.getElementById("connections-svg");
   const sourceListEl = document.getElementById("source-list");
   const fileInputEl = document.getElementById("file-input");
+  const loadFileInputEl = document.getElementById("load-file-input");
 
   const connectModeBtn = document.getElementById("connect-mode-btn");
   const colorPicker = document.getElementById("color-picker");
@@ -508,7 +513,7 @@
       deleteBtn.textContent = "✕";
       deleteBtn.title = "Elimina questa fonte";
       deleteBtn.addEventListener("click", (e) => {
-        e.stopPropagation(); // non creare nodo
+        e.stopPropagation();
         deleteSource(item.id);
       });
 
@@ -524,7 +529,6 @@
       div.appendChild(headerRow);
       div.appendChild(url);
 
-      // click sulla fonte -> crea un nodo sul desk
       div.addEventListener("click", () => {
         const rect = deskEl.getBoundingClientRect();
         const x = rect.width / 2 - 80;
@@ -830,36 +834,97 @@
     }
   });
 
-  function saveToLocalStorage() {
-    const data = { nodes, links, sourceItems };
-    localStorage.setItem("desk-la-fonte", JSON.stringify(data));
-    alert("Desk salvato.");
-  }
+  /* --- SALVATAGGIO: file JSON in Download + autosalvataggio locale --- */
 
   function saveToLocalStorageAuto() {
     const data = { nodes, links, sourceItems };
-    localStorage.setItem("desk-la-fonte", JSON.stringify(data));
+    try {
+      localStorage.setItem("desk-la-fonte", JSON.stringify(data));
+    } catch (e) {
+      // se localStorage è pieno o bloccato, pazienza
+    }
   }
 
-  function loadFromLocalStorage() {
-    const raw = localStorage.getItem("desk-la-fonte");
-    if (!raw) {
-      alert("Nessun desk salvato.");
-      return;
-    }
-    try {
-      const data = JSON.parse(raw);
-      nodes = data.nodes || [];
-      links = data.links || [];
-      sourceItems = data.sourceItems || [];
-      renderSource();
-      renderNodes();
-      renderLinks();
-    } catch (e) {
-      console.error(e);
-      alert("Errore nel caricamento del desk.");
-    }
+  function downloadDesk() {
+    const data = { nodes, links, sourceItems };
+    const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
+
+    const now = new Date();
+    const pad = n => String(n).padStart(2, "0");
+    const name =
+      "desk-la-fonte-" +
+      now.getFullYear() +
+      pad(now.getMonth() + 1) +
+      pad(now.getDate()) +
+      "-" +
+      pad(now.getHours()) +
+      pad(now.getMinutes()) +
+      ".json";
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    alert("Desk esportato come file JSON (controlla la cartella Download).");
   }
+
+  function uploadDesk() {
+    loadFileInputEl.value = "";
+    loadFileInputEl.click();
+  }
+
+  loadFileInputEl.addEventListener("change", (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result);
+        nodes = data.nodes || [];
+        links = data.links || [];
+        sourceItems = data.sourceItems || [];
+
+        // ricostruisci i contatori dagli id esistenti
+        let maxNode = 0;
+        let maxLink = 0;
+        let maxSource = 0;
+
+        nodes.forEach(n => {
+          const m = String(n.id || "").match(/node-(\d+)/);
+          if (m) maxNode = Math.max(maxNode, parseInt(m[1], 10));
+        });
+        links.forEach(l => {
+          const m = String(l.id || "").match(/link-(\d+)/);
+          if (m) maxLink = Math.max(maxLink, parseInt(m[1], 10));
+        });
+        sourceItems.forEach(s => {
+          const m = String(s.id || "").match(/source-(\d+)/);
+          if (m) maxSource = Math.max(maxSource, parseInt(m[1], 10));
+        });
+
+        nextNodeId = maxNode || 1;
+        nextLinkId = maxLink || 1;
+        pendingSourceId = maxSource || 0;
+
+        renderSource();
+        renderNodes();
+        renderLinks();
+        saveToLocalStorageAuto();
+        alert("Desk caricato dal file.");
+      } catch (err) {
+        console.error(err);
+        alert("File non valido (JSON corrotto o formato errato).");
+      }
+    };
+    reader.readAsText(file);
+  });
+
+  /* --- CLEAR DESK --- */
 
   function clearDesk() {
     if (!confirm("Vuoi davvero azzerare il desk (card e connettori)? Le fonti resteranno.")) return;
@@ -870,8 +935,8 @@
     saveToLocalStorageAuto();
   }
 
-  saveBtn.addEventListener("click", saveToLocalStorage);
-  loadBtn.addEventListener("click", loadFromLocalStorage);
+  saveBtn.addEventListener("click", downloadDesk);
+  loadBtn.addEventListener("click", uploadDesk);
   clearBtn.addEventListener("click", clearDesk);
 
   toggleSourceBtn.addEventListener("click", () => {
@@ -923,11 +988,49 @@
 
   clearSourcesBtn.addEventListener("click", clearSources);
 
-  function initExample() {
-    if (localStorage.getItem("desk-la-fonte")) {
-      loadFromLocalStorage();
-      return;
+  /* --- INIT --- */
+
+  function loadFromLocalStorage() {
+    const raw = localStorage.getItem("desk-la-fonte");
+    if (!raw) return;
+    try {
+      const data = JSON.parse(raw);
+      nodes = data.nodes || [];
+      links = data.links || [];
+      sourceItems = data.sourceItems || [];
+
+      let maxNode = 0;
+      let maxLink = 0;
+      let maxSource = 0;
+
+      nodes.forEach(n => {
+        const m = String(n.id || "").match(/node-(\d+)/);
+        if (m) maxNode = Math.max(maxNode, parseInt(m[1], 10));
+      });
+      links.forEach(l => {
+        const m = String(l.id || "").match(/link-(\d+)/);
+        if (m) maxLink = Math.max(maxLink, parseInt(m[1], 10));
+      });
+      sourceItems.forEach(s => {
+        const m = String(s.id || "").match(/source-(\d+)/);
+        if (m) maxSource = Math.max(maxSource, parseInt(m[1], 10));
+      });
+
+      nextNodeId = maxNode || 1;
+      nextLinkId = maxLink || 1;
+      pendingSourceId = maxSource || 0;
+
+      renderSource();
+      renderNodes();
+      renderLinks();
+    } catch (e) {
+      console.error(e);
     }
+  }
+
+  function initExample() {
+    loadFromLocalStorage();
+    if (nodes.length || links.length || sourceItems.length) return;
 
     sourceItems = [
       {
