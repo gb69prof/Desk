@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <title>Desk – La Fonte</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f3f4f6;
+      color: #111827;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    header {
+      background: #111827;
+      color: white;
+      padding: 0.5rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    header h1 {
+      font-size: 1rem;
+      margin-right: 1rem;
+      white-space: nowrap;
+    }
+
+    .toolbar-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      background: #1f2937;
+      padding: 0.25rem 0.5rem;
+      border-radius: 999px;
+    }
+
+    label {
+      font-size: 0.75rem;
+      opacity: 0.9;
+    }
+
+    select,
+    button,
+    input[type="color"] {
+      font-size: 0.75rem;
+      border-radius: 999px;
+      border: none;
+      padding: 0.2rem 0.5rem;
+      outline: none;
+    }
+
+    button {
+      background: #4b5563;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #6b7280;
+    }
+
+    button.primary {
+      background: #2563eb;
+    }
+
+    button.primary:hover {
+      background: #1d4ed8;
+    }
+
+    button.danger {
+      background: #b91c1c;
+    }
+
+    button.danger:hover {
+      background: #991b1b;
+    }
+
+    button.toggle-active {
+      background: #10b981;
+    }
+
+    #main {
+      flex: 1;
+      display: flex;
+      min-height: 0;
+    }
+
+    #desk-wrapper {
+      flex: 2;
+      position: relative;
+      display: flex;
+      border-right: 1px solid #e5e7eb;
+      background: #e5e7eb;
+    }
+
+    #desk-container {
+      position: relative;
+      flex: 1;
+      margin: 0.5rem;
+      border-radius: 0.75rem;
+      background: #f9fafb;
+      box-shadow: 0 4px 10px rgba(15, 23, 42, 0.1);
+      overflow: hidden;
+    }
+
+    #connections-svg {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    #desk {
+      position: absolute;
+      inset: 0;
+    }
+
+    .node {
+      position: absolute;
+      min-width: 140px;
+      max-width: 260px;
+      padding: 0.5rem;
+      border-radius: 0.75rem;
+      background: white;
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.15);
+      border: 1px solid #e5e7eb;
+      cursor: grab;
+      touch-action: none;
+    }
+
+    .node:active {
+      cursor: grabbing;
+    }
+
+    .node-title {
+      font-weight: 600;
+      font-size: 0.85rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .node-meta {
+      font-size: 0.7rem;
+      color: #6b7280;
+    }
+
+    .node-buttons {
+      margin-top: 0.25rem;
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.25rem;
+    }
+
+    .node-buttons button {
+      font-size: 0.65rem;
+      padding: 0.15rem 0.4rem;
+    }
+
+    /* Fonte (source panel) */
+
+    #source-panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-width: 180px;
+      max-width: 400px;
+      transition: width 0.2s ease, opacity 0.2s ease;
+      background: #111827;
+      color: white;
+    }
+
+    #source-panel.hidden {
+      width: 0;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    #source-header {
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid #374151;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    #source-header h2 {
+      font-size: 0.85rem;
+    }
+
+    #source-actions {
+      display: flex;
+      gap: 0.25rem;
+    }
+
+    #source-actions button {
+      font-size: 0.7rem;
+      background: #374151;
+    }
+
+    #source-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0.5rem 0.75rem 0.75rem;
+    }
+
+    .source-item {
+      padding: 0.4rem 0.5rem;
+      border-radius: 0.5rem;
+      background: #1f2937;
+      margin-bottom: 0.4rem;
+      cursor: pointer;
+      border: 1px solid transparent;
+    }
+
+    .source-item:hover {
+      background: #111827;
+      border-color: #4b5563;
+    }
+
+    .source-title {
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    .source-url {
+      font-size: 0.65rem;
+      color: #9ca3af;
+      word-break: break-all;
+    }
+
+    /* Modal anteprima */
+
+    #preview-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.6);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+    }
+
+    #preview-modal.active {
+      display: flex;
+    }
+
+    #preview-content {
+      background: white;
+      width: min(900px, 90vw);
+      height: min(600px, 80vh);
+      border-radius: 0.75rem;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.4);
+      display: flex;
+      flex-direction: column;
+    }
+
+    #preview-header {
+      padding: 0.5rem 0.75rem;
+      background: #111827;
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.8rem;
+    }
+
+    #preview-frame {
+      flex: 1;
+      border: none;
+      width: 100%;
+    }
+
+    /* File input nascosto */
+
+    #file-input {
+      display: none;
+    }
+
+    /* Piccolo helper per responsività */
+
+    @media (max-width: 800px) {
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      #main {
+        flex-direction: column;
+      }
+      #desk-wrapper {
+        flex: none;
+        height: 55vh;
+      }
+      #source-panel {
+        flex: none;
+        height: 45vh;
+        max-width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>Desk – La Fonte</h1>
+
+    <div class="toolbar-group">
+      <label>Modalità:</label>
+      <button id="connect-mode-btn">Collega</button>
+    </div>
+
+    <div class="toolbar-group">
+      <label for="color-picker">Colore:</label>
+      <input type="color" id="color-picker" value="#111827" />
+      <label for="width-select">Spessore:</label>
+      <select id="width-select">
+        <option value="1">Sottile</option>
+        <option value="2" selected>Medio</option>
+        <option value="4">Grosso</option>
+      </select>
+    </div>
+
+    <div class="toolbar-group">
+      <button id="save-btn" class="primary">Salva desk</button>
+      <button id="load-btn">Carica desk</button>
+      <button id="clear-btn" class="danger">Nuovo</button>
+    </div>
+
+    <div class="toolbar-group">
+      <button id="toggle-source-btn">Mostra/nascondi Fonte</button>
+    </div>
+  </header>
+
+  <div id="main">
+    <div id="desk-wrapper">
+      <div id="desk-container">
+        <svg id="connections-svg"></svg>
+        <div id="desk"></div>
+      </div>
+    </div>
+
+    <aside id="source-panel">
+      <div id="source-header">
+        <h2>La Fonte</h2>
+        <div id="source-actions">
+          <button id="add-link-btn">+ Link</button>
+          <button id="add-file-btn">+ File</button>
+        </div>
+      </div>
+      <div id="source-list">
+        <!-- elementi di esempio -->
+      </div>
+    </aside>
+  </div>
+</div>
+
+<!-- Modal anteprima -->
+<div id="preview-modal">
+  <div id="preview-content">
+    <div id="preview-header">
+      <span id="preview-title"></span>
+      <button id="preview-close-btn">Chiudi</button>
+    </div>
+    <iframe id="preview-frame"></iframe>
+  </div>
+</div>
+
+<input type="file" id="file-input" multiple />
+
+<script>
+  // Stato del desk
+  let nodes = [];
+  let links = [];
+  let sourceItems = [];
+  let connectMode = false;
+  let pendingSourceId = 0;
+  let nextNodeId = 1;
+  let nextLinkId = 1;
+  let connectStartNode = null;
+
+  const deskEl = document.getElementById("desk");
+  const connectionsSvg = document.getElementById("connections-svg");
+  const sourceListEl = document.getElementById("source-list");
+  const fileInputEl = document.getElementById("file-input");
+
+  const connectModeBtn = document.getElementById("connect-mode-btn");
+  const colorPicker = document.getElementById("color-picker");
+  const widthSelect = document.getElementById("width-select");
+
+  const saveBtn = document.getElementById("save-btn");
+  const loadBtn = document.getElementById("load-btn");
+  const clearBtn = document.getElementById("clear-btn");
+  const toggleSourceBtn = document.getElementById("toggle-source-btn");
+  const sourcePanel = document.getElementById("source-panel");
+
+  const addLinkBtn = document.getElementById("add-link-btn");
+  const addFileBtn = document.getElementById("add-file-btn");
+
+  const previewModal = document.getElementById("preview-modal");
+  const previewTitle = document.getElementById("preview-title");
+  const previewFrame = document.getElementById("preview-frame");
+  const previewCloseBtn = document.getElementById("preview-close-btn");
+
+  // Helpers ID
+  function createSourceId() {
+    pendingSourceId += 1;
+    return "source-" + pendingSourceId;
+  }
+
+  function createNodeId() {
+    nextNodeId += 1;
+    return "node-" + nextNodeId;
+  }
+
+  function createLinkId() {
+    nextLinkId += 1;
+    return "link-" + nextLinkId;
+  }
+
+  // Render fonte
+  function renderSource() {
+    sourceListEl.innerHTML = "";
+    sourceItems.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "source-item";
+      div.dataset.id = item.id;
+
+      const title = document.createElement("div");
+      title.className = "source-title";
+      title.textContent = item.title;
+
+      const url = document.createElement("div");
+      url.className = "source-url";
+      url.textContent = item.type === "url" ? item.url : "(file locale) " + item.fileName;
+
+      div.appendChild(title);
+      div.appendChild(url);
+
+      // click sulla fonte -> crea un nodo sul desk
+      div.addEventListener("click", () => {
+        const rect = deskEl.getBoundingClientRect();
+        const x = rect.width / 2 - 80;
+        const y = rect.height / 2 - 40;
+        createNodeFromSource(item.id, x, y);
+      });
+
+      sourceListEl.appendChild(div);
+    });
+  }
+
+  // Crea nodo a partire da source
+  function createNodeFromSource(sourceId, x, y) {
+    const item = sourceItems.find(s => s.id === sourceId);
+    if (!item) return;
+
+    const node = {
+      id: createNodeId(),
+      sourceId: sourceId,
+      title: item.title,
+      x,
+      y,
+      type: item.type,
+      url: item.url || null,
+      fileName: item.fileName || null,
+      objectUrl: item.objectUrl || null
+    };
+    nodes.push(node);
+    renderNodes();
+    renderLinks();
+  }
+
+  // Render nodi
+  function renderNodes() {
+    deskEl.innerHTML = "";
+    nodes.forEach(node => {
+      const div = document.createElement("div");
+      div.className = "node";
+      div.style.left = node.x + "px";
+      div.style.top = node.y + "px";
+      div.dataset.id = node.id;
+
+      const titleEl = document.createElement("div");
+      titleEl.className = "node-title";
+      titleEl.textContent = node.title;
+
+      const metaEl = document.createElement("div");
+      metaEl.className = "node-meta";
+      metaEl.textContent = node.type === "url"
+        ? "Link"
+        : "File locale";
+
+      const btnContainer = document.createElement("div");
+      btnContainer.className = "node-buttons";
+
+      const openBtn = document.createElement("button");
+      openBtn.textContent = "Apri";
+      openBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        openNode(node);
+      });
+
+      const connectBtn = document.createElement("button");
+      connectBtn.textContent = "↔";
+      connectBtn.title = "Usa in modalità collega";
+      connectBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        nodeClickedForConnect(node);
+      });
+
+      btnContainer.appendChild(openBtn);
+      btnContainer.appendChild(connectBtn);
+
+      div.appendChild(titleEl);
+      div.appendChild(metaEl);
+      div.appendChild(btnContainer);
+
+      // Drag
+      makeNodeDraggable(div, node);
+
+      // Click (anche sullo sfondo del nodo)
+      div.addEventListener("click", () => {
+        if (!connectMode) {
+          openNode(node);
+        } else {
+          nodeClickedForConnect(node);
+        }
+      });
+
+      deskEl.appendChild(div);
+    });
+  }
+
+  // Drag nodi con Pointer Events
+  function makeNodeDraggable(el, node) {
+    let isPointerDown = false;
+    let startX = 0;
+    let startY = 0;
+    let nodeStartX = 0;
+    let nodeStartY = 0;
+
+    el.addEventListener("pointerdown", (e) => {
+      if (e.button !== 0) return;
+      isPointerDown = true;
+      el.setPointerCapture(e.pointerId);
+      startX = e.clientX;
+      startY = e.clientY;
+      nodeStartX = node.x;
+      nodeStartY = node.y;
+    });
+
+    el.addEventListener("pointermove", (e) => {
+      if (!isPointerDown) return;
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      node.x = nodeStartX + dx;
+      node.y = nodeStartY + dy;
+      el.style.left = node.x + "px";
+      el.style.top = node.y + "px";
+      renderLinks();
+    });
+
+    el.addEventListener("pointerup", (e) => {
+      isPointerDown = false;
+      el.releasePointerCapture(e.pointerId);
+      saveToLocalStorageAuto();
+    });
+
+    el.addEventListener("pointercancel", (e) => {
+      isPointerDown = false;
+      el.releasePointerCapture(e.pointerId);
+    });
+  }
+
+  // Modalità collega
+  function nodeClickedForConnect(node) {
+    if (!connectMode) return;
+    if (!connectStartNode) {
+      connectStartNode = node;
+    } else {
+      if (connectStartNode.id !== node.id) {
+        const link = {
+          id: createLinkId(),
+          from: connectStartNode.id,
+          to: node.id,
+          color: colorPicker.value,
+          width: parseInt(widthSelect.value, 10)
+        };
+        links.push(link);
+        renderLinks();
+        saveToLocalStorageAuto();
+      }
+      connectStartNode = null;
+    }
+  }
+
+  // Render connettori
+  function renderLinks() {
+    const rect = deskEl.getBoundingClientRect();
+    connectionsSvg.setAttribute("width", rect.width);
+    connectionsSvg.setAttribute("height", rect.height);
+    connectionsSvg.innerHTML = "";
+
+    links.forEach(link => {
+      const fromNode = nodes.find(n => n.id === link.from);
+      const toNode = nodes.find(n => n.id === link.to);
+      if (!fromNode || !toNode) return;
+
+      const x1 = fromNode.x + 70; // metà approx
+      const y1 = fromNode.y + 30;
+      const x2 = toNode.x + 70;
+      const y2 = toNode.y + 30;
+
+      const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      line.setAttribute("x1", x1);
+      line.setAttribute("y1", y1);
+      line.setAttribute("x2", x2);
+      line.setAttribute("y2", y2);
+      line.setAttribute("stroke", link.color || "#111827");
+      line.setAttribute("stroke-width", link.width || 2);
+      line.setAttribute("stroke-linecap", "round");
+      connectionsSvg.appendChild(line);
+    });
+  }
+
+  // Anteprima nodo (apertura)
+  function openNode(node) {
+    previewTitle.textContent = node.title;
+
+    if (node.type === "url" && node.url) {
+      previewFrame.src = node.url;
+    } else if (node.type === "file" && node.objectUrl) {
+      // Prova a mostrare il file locale (pdf/immagine ecc.)
+      previewFrame.src = node.objectUrl;
+    } else {
+      previewFrame.src = "about:blank";
+    }
+
+    previewModal.classList.add("active");
+  }
+
+  previewCloseBtn.addEventListener("click", () => {
+    previewModal.classList.remove("active");
+    previewFrame.src = "about:blank";
+  });
+
+  previewModal.addEventListener("click", (e) => {
+    if (e.target === previewModal) {
+      previewModal.classList.remove("active");
+      previewFrame.src = "about:blank";
+    }
+  });
+
+  // Toolbar: modalità collega
+  connectModeBtn.addEventListener("click", () => {
+    connectMode = !connectMode;
+    connectStartNode = null;
+    if (connectMode) {
+      connectModeBtn.classList.add("toggle-active");
+    } else {
+      connectModeBtn.classList.remove("toggle-active");
+    }
+  });
+
+  // Salvataggio / caricamento
+  function saveToLocalStorage() {
+    const data = {
+      nodes,
+      links,
+      sourceItems
+    };
+    localStorage.setItem("desk-la-fonte", JSON.stringify(data));
+    alert("Desk salvato.");
+  }
+
+  function saveToLocalStorageAuto() {
+    const data = {
+      nodes,
+      links,
+      sourceItems
+    };
+    localStorage.setItem("desk-la-fonte", JSON.stringify(data));
+  }
+
+  function loadFromLocalStorage() {
+    const raw = localStorage.getItem("desk-la-fonte");
+    if (!raw) {
+      alert("Nessun desk salvato.");
+      return;
+    }
+    try {
+      const data = JSON.parse(raw);
+      nodes = data.nodes || [];
+      links = data.links || [];
+      sourceItems = data.sourceItems || [];
+      renderSource();
+      renderNodes();
+      renderLinks();
+    } catch (e) {
+      console.error(e);
+      alert("Errore nel caricamento del desk.");
+    }
+  }
+
+  function clearDesk() {
+    if (!confirm("Vuoi davvero azzerare il desk?")) return;
+    nodes = [];
+    links = [];
+    // Non tocchiamo la fonte, solo il desk
+    renderNodes();
+    renderLinks();
+    saveToLocalStorageAuto();
+  }
+
+  saveBtn.addEventListener("click", saveToLocalStorage);
+  loadBtn.addEventListener("click", loadFromLocalStorage);
+  clearBtn.addEventListener("click", clearDesk);
+
+  // Mostra/nascondi fonte
+  toggleSourceBtn.addEventListener("click", () => {
+    sourcePanel.classList.toggle("hidden");
+  });
+
+  // Aggiungi link alla fonte
+  addLinkBtn.addEventListener("click", () => {
+    const title = prompt("Titolo del materiale:");
+    if (!title) return;
+    const url = prompt("URL (pagina GitHub, Google Drive, YouTube, ecc.):");
+    if (!url) return;
+    const item = {
+      id: createSourceId(),
+      type: "url",
+      title,
+      url
+    };
+    sourceItems.push(item);
+    renderSource();
+    saveToLocalStorageAuto();
+  });
+
+  // Aggiungi file dal dispositivo
+  addFileBtn.addEventListener("click", () => {
+    fileInputEl.value = "";
+    fileInputEl.click();
+  });
+
+  fileInputEl.addEventListener("change", (e) => {
+    const files = Array.from(e.target.files || []);
+    files.forEach(file => {
+      const objectUrl = URL.createObjectURL(file);
+      const item = {
+        id: createSourceId(),
+        type: "file",
+        title: file.name,
+        fileName: file.name,
+        objectUrl
+      };
+      sourceItems.push(item);
+    });
+    renderSource();
+    saveToLocalStorageAuto();
+  });
+
+  // Inizializzazione: qualche esempio base
+  function initExample() {
+    if (localStorage.getItem("desk-la-fonte")) {
+      loadFromLocalStorage();
+      return;
+    }
+
+    sourceItems = [
+      {
+        id: createSourceId(),
+        type: "url",
+        title: "Digitale purpurea – lezione",
+        url: "https://example.com/digitale.html"
+      },
+      {
+        id: createSourceId(),
+        type: "url",
+        title: "Gelsomino notturno – mappa",
+        url: "https://example.com/gelsomino.html"
+      }
+    ];
+    renderSource();
+    renderNodes();
+    renderLinks();
+  }
+
+  window.addEventListener("resize", renderLinks);
+
+  initExample();
+</script>
+</body>
+</html>
