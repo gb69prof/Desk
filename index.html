@@ -311,7 +311,7 @@
       flex: 1;
       display: flex;
       background: #f9fafb;
-      overflow: hidden;
+      overflow: auto;
     }
 
     #preview-image-wrapper {
@@ -777,7 +777,23 @@
   }
 
   function openNode(node) {
-    // reset
+    const mime = (node.mimeType || "").toLowerCase();
+    const isLocalImage = node.type === "file" && mime.startsWith("image/");
+    const isRemoteImage = node.type === "url" && isImageUrl(node.url);
+
+    // PDF → nuova scheda (lettore nativo del browser)
+    if (isPdf(node)) {
+      let src = null;
+      if (node.type === "url" && node.url) src = node.url;
+      else if (node.type === "file" && node.objectUrl) src = node.objectUrl;
+
+      if (src) {
+        window.open(src, "_blank");
+        return;
+      }
+    }
+
+    // Reset modal
     previewTitle.textContent = node.title;
     previewFrame.style.display = "none";
     previewImageWrapper.style.display = "none";
@@ -786,31 +802,15 @@
     currentPreviewUrl = null;
     previewOpenTabBtn.style.display = "none";
 
-    const mime = (node.mimeType || "").toLowerCase();
-    const isLocalImage = node.type === "file" && mime.startsWith("image/");
-    const isRemoteImage = node.type === "url" && isImageUrl(node.url);
-
+    // Immagini (locali o URL)
     if (isLocalImage || isRemoteImage) {
-      // IMMAGINE: la mostro sempre intera, adattata allo spazio
       const src = node.type === "file" ? node.objectUrl : node.url;
       previewImageWrapper.style.display = "block";
       previewImage.src = src;
       currentPreviewUrl = src;
       previewOpenTabBtn.style.display = "inline-block";
-    } else if (isPdf(node)) {
-      // PDF: lo apro nell'iframe scrollabile
-      let src = null;
-      if (node.type === "url" && node.url) src = node.url;
-      else if (node.type === "file" && node.objectUrl) src = node.objectUrl;
-      if (src) {
-        previewFrame.src = src;
-        previewFrame.style.display = "block";
-        currentPreviewUrl = src;
-        previewOpenTabBtn.style.display = "inline-block";
-      }
     } else {
-      // ALTRI TIPI (doc, docx ecc.): provo comunque in iframe,
-      // ma su molti browser sarà solo scaricabile.
+      // Altri tipi → iframe
       let src = null;
       if (node.type === "url" && node.url) src = node.url;
       else if (node.type === "file" && node.objectUrl) src = node.objectUrl;
