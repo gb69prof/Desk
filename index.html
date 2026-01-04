@@ -311,6 +311,7 @@
       flex: 1;
       display: flex;
       background: #f9fafb;
+      overflow: hidden;
     }
 
     #preview-image-wrapper {
@@ -332,7 +333,10 @@
       flex: 1;
       border: none;
       width: 100%;
+      height: 100%;
       display: none;
+      overflow: auto;
+      background: white;
     }
 
     #file-input,
@@ -492,6 +496,13 @@
 
   function isImageUrl(url) {
     return /\.(png|jpe?g|gif|webp|svg)$/i.test(url || "");
+  }
+
+  function isPdf(node) {
+    const mime = (node.mimeType || "").toLowerCase();
+    if (mime.includes("pdf")) return true;
+    const url = node.url || "";
+    return /\.pdf(\?|$)/i.test(url);
   }
 
   function renderSource() {
@@ -766,6 +777,7 @@
   }
 
   function openNode(node) {
+    // reset
     previewTitle.textContent = node.title;
     previewFrame.style.display = "none";
     previewImageWrapper.style.display = "none";
@@ -779,18 +791,30 @@
     const isRemoteImage = node.type === "url" && isImageUrl(node.url);
 
     if (isLocalImage || isRemoteImage) {
+      // IMMAGINE: la mostro sempre intera, adattata allo spazio
       const src = node.type === "file" ? node.objectUrl : node.url;
       previewImageWrapper.style.display = "block";
       previewImage.src = src;
       currentPreviewUrl = src;
       previewOpenTabBtn.style.display = "inline-block";
-    } else {
+    } else if (isPdf(node)) {
+      // PDF: lo apro nell'iframe scrollabile
       let src = null;
-      if (node.type === "url" && node.url) {
-        src = node.url;
-      } else if (node.type === "file" && node.objectUrl) {
-        src = node.objectUrl;
+      if (node.type === "url" && node.url) src = node.url;
+      else if (node.type === "file" && node.objectUrl) src = node.objectUrl;
+      if (src) {
+        previewFrame.src = src;
+        previewFrame.style.display = "block";
+        currentPreviewUrl = src;
+        previewOpenTabBtn.style.display = "inline-block";
       }
+    } else {
+      // ALTRI TIPI (doc, docx ecc.): provo comunque in iframe,
+      // ma su molti browser sarà solo scaricabile.
+      let src = null;
+      if (node.type === "url" && node.url) src = node.url;
+      else if (node.type === "file" && node.objectUrl) src = node.objectUrl;
+
       if (src) {
         previewFrame.src = src;
         previewFrame.style.display = "block";
@@ -1028,8 +1052,8 @@
   }
 
   function initExample() {
-    // Da ora in poi: niente esempi.
-    // Se c'è qualcosa in localStorage, lo carico; altrimenti lascio tutto vuoto.
+    // nessun contenuto iniziale: se c'è qualcosa in localStorage lo carico,
+    // altrimenti desk e fonti restano vuoti.
     loadFromLocalStorage();
   }
 
