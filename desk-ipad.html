@@ -308,7 +308,7 @@
       border: 1px solid rgba(148,163,184,0.4);
       box-shadow: 0 16px 36px rgba(15, 23, 42, 0.2);
       overflow: hidden;
-      touch-action: none; /* blocchiamo lo scroll dentro il canvas per drag/resize */
+      touch-action: none; /* per drag/resize dentro il canvas */
     }
 
     .canvas-grid {
@@ -358,13 +358,22 @@
       border: 1px solid rgba(148,163,184,0.35);
       transition: box-shadow 0.12s ease, transform 0.08s ease, border-color 0.12s ease;
       z-index: 2;
-      touch-action: none; /* drag/resize con tocchi */
+      touch-action: none;
     }
 
     .desk-card.selected {
       border-color: var(--accent);
       box-shadow: 0 16px 40px rgba(37,99,235,0.32);
       transform: translateY(-1px);
+    }
+
+    .desk-card.connecting-source {
+      border-color: #f97316;
+      box-shadow: 0 16px 40px rgba(249,115,22,0.35);
+    }
+
+    .desk-card.maximized {
+      /* gestita via JS con left/top/width/height */
     }
 
     .card-header {
@@ -578,7 +587,7 @@
 
     <main class="main">
       <aside class="sidebar">
-        <!-- Strumenti per creare card dirette -->
+        <!-- Strumenti -->
         <div class="sidebar-section">
           <div class="sidebar-title">
             Strumenti
@@ -598,7 +607,7 @@
           </div>
         </div>
 
-        <!-- Sezione fonti / deposito -->
+        <!-- Fonti / deposito -->
         <div class="sidebar-section">
           <div class="sidebar-title">
             Fonti
@@ -658,7 +667,7 @@
         <div class="sidebar-footer">
           ➜ Le fonti restano nel deposito.<br>
           ➜ Con “➕ Desk” le trasformi in card spostabili.<br>
-          ➜ Card collegate con connettori blu (tap pallini).
+          ➜ Tap pallino blu per collegare le card.
         </div>
 
         <input type="file" id="input-image" accept="image/*">
@@ -699,7 +708,7 @@
       let connectorStartCard = null;
 
       const hasPointer = window.PointerEvent !== undefined;
-      const fonti = []; // archivio fonti
+      const fonti = [];
 
       function addDrag(handle, onStart, onMove, onEnd) {
         let active = false;
@@ -813,6 +822,36 @@
         updateConnectors();
       }
 
+      function toggleMaximize(card) {
+        const isMax = card.classList.contains('maximized');
+        const canvasRect = canvas.getBoundingClientRect();
+        if (!isMax) {
+          const rect = card.getBoundingClientRect();
+          card.dataset.prevLeft = card.style.left || (rect.left - canvasRect.left) + 'px';
+          card.dataset.prevTop = card.style.top || (rect.top - canvasRect.top) + 'px';
+          card.dataset.prevWidth = card.style.width || rect.width + 'px';
+          card.dataset.prevHeight = card.style.height || rect.height + 'px';
+
+          const targetWidth = canvasRect.width * 0.8;
+          const targetHeight = canvasRect.height * 0.8;
+          const left = (canvasRect.width - targetWidth) / 2;
+          const top = (canvasRect.height - targetHeight) / 2;
+
+          card.style.left = left + 'px';
+          card.style.top = top + 'px';
+          card.style.width = targetWidth + 'px';
+          card.style.height = targetHeight + 'px';
+          card.classList.add('maximized');
+        } else {
+          if (card.dataset.prevLeft) card.style.left = card.dataset.prevLeft;
+          if (card.dataset.prevTop) card.style.top = card.dataset.prevTop;
+          if (card.dataset.prevWidth) card.style.width = card.dataset.prevWidth;
+          if (card.dataset.prevHeight) card.style.height = card.dataset.prevHeight;
+          card.classList.remove('maximized');
+        }
+        updateConnectors();
+      }
+
       function centerCard(card) {
         const rect = canvas.getBoundingClientRect();
         const cardRect = card.getBoundingClientRect();
@@ -826,10 +865,13 @@
       function handleConnectorClick(card) {
         if (!connectorStartCard) {
           connectorStartCard = card;
+          card.classList.add('connecting-source');
           bringToFront(card);
         } else if (connectorStartCard === card) {
+          connectorStartCard.classList.remove('connecting-source');
           connectorStartCard = null;
         } else {
+          connectorStartCard.classList.remove('connecting-source');
           createConnector(connectorStartCard, card);
           connectorStartCard = null;
         }
@@ -1036,11 +1078,11 @@
           }
         );
 
-        // selezione card
+        // selezione
         card.addEventListener('pointerdown', () => bringToFront(card));
-        card.addEventListener('mousedown', () => bringToFront(card)); // fallback
+        card.addEventListener('mousedown', () => bringToFront(card));
 
-        // toggle open/close
+        // apri/chiudi
         toggleButton.addEventListener('click', (e) => {
           e.stopPropagation();
           toggleCollapse(card, toggleButton);
@@ -1051,13 +1093,13 @@
           toggleCollapse(card, toggleButton);
         });
 
-        // center
+        // centrare
         centerButton.addEventListener('click', (e) => {
           e.stopPropagation();
           centerCard(card);
         });
 
-        // close
+        // chiudere
         closeButton.addEventListener('click', (e) => {
           e.stopPropagation();
           const id = card.dataset.cardId;
@@ -1067,7 +1109,7 @@
           updateConnectors();
         });
 
-        // connector handle
+        // connettori
         connectorHandle.addEventListener('click', (e) => {
           e.stopPropagation();
           handleConnectorClick(card);
@@ -1097,18 +1139,36 @@
           img.className = 'card-image';
           img.src = fonte.dataUrl;
           bodyInner.appendChild(img);
+
+          // tap per ingrandire
+          bodyInner.addEventListener('click', () => {
+            toggleMaximize(card);
+          });
         } else if (fonte.type === 'pdf') {
           const iframe = document.createElement('iframe');
           iframe.className = 'card-embed';
           iframe.src = fonte.dataUrl;
           bodyInner.appendChild(iframe);
+
+          bodyInner.addEventListener('click', (e) => {
+            // evita che un singolo tap sul pdf faccia scroll invece di ingrandire
+            if (e.target === iframe) {
+              toggleMaximize(card);
+            }
+          });
         } else if (fonte.type === 'web' || fonte.type === 'video') {
           const iframe = document.createElement('iframe');
           iframe.className = 'card-iframe';
           iframe.src = fonte.url;
-          iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-forms allow-popups');
+          iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-forms allow-popups allow-presentation');
           bodyInner.appendChild(iframe);
           titleEl.textContent = fonte.shortTitle || baseTitle;
+
+          bodyInner.addEventListener('click', (e) => {
+            if (e.target === iframe) {
+              toggleMaximize(card);
+            }
+          });
         }
 
         bringToFront(card);
@@ -1116,7 +1176,7 @@
         return card;
       }
 
-      /* Gestione fonti (deposito) */
+      /* Fonti / deposito */
 
       function addFonteToList(fonte) {
         const row = document.createElement('div');
@@ -1245,7 +1305,7 @@
         addFonteToList(fonte);
       });
 
-      // Video (YouTube, HeyGen…)
+      // Video
       btnAddVideo.addEventListener('click', () => {
         const url = window.prompt('Inserisci URL del video (YouTube, HeyGen, ecc.):');
         if (!url) return;
@@ -1265,7 +1325,6 @@
       /* Pulizia desk / connettori */
 
       btnClear.addEventListener('click', () => {
-        if (!confirm('Svuotare il desk (ma non le fonti)?')) return;
         const cards = canvas.querySelectorAll('.desk-card');
         cards.forEach(c => c.remove());
         clearAllConnectors();
@@ -1274,12 +1333,10 @@
       });
 
       btnClearConnectors.addEventListener('click', () => {
-        if (!connectors.length) return;
-        if (!confirm('Cancellare tutti i connettori dal desk?')) return;
         clearAllConnectors();
       });
 
-      // All'avvio: nessuna card, nessuna fonte → tutto vuoto, come richiesto
+      // all'avvio: nessuna card, nessuna fonte → desk pulito
     })();
   </script>
 </body>
