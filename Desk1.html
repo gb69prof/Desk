@@ -256,9 +256,10 @@
       flex: 1;
       position: relative;
       border-radius: 22px;
-      background: radial-gradient(circle at 0 0, rgba(129, 140, 248, 0.18), transparent 55%),
-                  radial-gradient(circle at 100% 100%, rgba(45, 212, 191, 0.18), transparent 55%),
-                  var(--bg-canvas);
+      background:
+        radial-gradient(circle at 0 0, rgba(129, 140, 248, 0.18), transparent 55%),
+        radial-gradient(circle at 100% 100%, rgba(45, 212, 191, 0.18), transparent 55%),
+        var(--bg-canvas);
       border: 1px solid rgba(148, 163, 184, 0.4);
       box-shadow: 0 18px 42px rgba(15, 23, 42, 0.2);
       overflow: hidden;
@@ -268,11 +269,35 @@
     .canvas-grid {
       position: absolute;
       inset: 0;
-      background-image: linear-gradient(to right, rgba(148, 163, 184, 0.15) 1px, transparent 1px),
-                        linear-gradient(to bottom, rgba(148, 163, 184, 0.12) 1px, transparent 1px);
+      background-image:
+        linear-gradient(to right, rgba(148, 163, 184, 0.15) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(148, 163, 184, 0.12) 1px, transparent 1px);
       background-size: 32px 32px;
       opacity: 0.35;
       pointer-events: none;
+    }
+
+    /* Layer connettori */
+    .connector-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: auto;
+      overflow: visible;
+      z-index: 1;
+    }
+
+    .connector-path {
+      fill: none;
+      stroke: rgba(15, 23, 42, 0.45);
+      stroke-width: 2;
+      stroke-linecap: round;
+      cursor: pointer;
+      transition: stroke 0.12s ease, stroke-width 0.12s ease;
+    }
+
+    .connector-path:hover {
+      stroke: var(--accent);
+      stroke-width: 3;
     }
 
     /* Card sul desk */
@@ -289,6 +314,7 @@
       overflow: hidden;
       border: 1px solid rgba(148, 163, 184, 0.35);
       transition: box-shadow 0.12s ease, transform 0.08s ease, border-color 0.12s ease;
+      z-index: 2;
     }
 
     .desk-card.selected {
@@ -307,6 +333,8 @@
       cursor: move;
       user-select: none;
       border-bottom: 1px solid rgba(148, 163, 184, 0.35);
+      position: relative;
+      z-index: 3;
     }
 
     .card-header-left {
@@ -394,6 +422,8 @@
       display: flex;
       align-items: stretch;
       justify-content: stretch;
+      position: relative;
+      z-index: 2;
     }
 
     .card-body-inner {
@@ -457,6 +487,7 @@
       font-size: 10px;
       color: #6b7280;
       backdrop-filter: blur(4px);
+      z-index: 4;
     }
 
     .resize-handle::before {
@@ -468,21 +499,49 @@
       transform: translate(1px, 1px);
     }
 
-    /* File inputs nascosti */
-    input[type="file"] {
+    /* Handle per connettori */
+    .connector-handle {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      right: -6px;
+      top: 50%;
+      transform: translateY(-50%);
+      border-radius: 999px;
+      background: var(--accent-soft);
+      border: 1px solid rgba(59, 130, 246, 0.7);
+      cursor: crosshair;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 5;
+      box-shadow: 0 0 0 2px rgba(248, 250, 252, 0.9);
+    }
+
+    .connector-handle::before {
+      content: "";
+      width: 4px;
+      height: 4px;
+      border-radius: 999px;
+      background: #3b82f6;
+    }
+
+    /* Stato collassato (apri/chiudi) */
+    .desk-card.collapsed {
+      height: 46px !important;
+    }
+
+    .desk-card.collapsed .card-body {
       display: none;
     }
 
-    /* Helper per testo piccolo */
-    .muted-label {
-      font-size: 11px;
-      color: var(--text-muted);
-      margin-bottom: 4px;
+    .desk-card.collapsed .resize-handle {
+      display: none;
     }
 
-    .import-input-label {
-      font-size: 11px;
-      color: var(--text-muted);
+    /* File inputs nascosti */
+    input[type="file"] {
+      display: none;
     }
 
     @media (max-width: 900px) {
@@ -569,8 +628,8 @@
         </div>
 
         <div class="sidebar-footer">
-          <div>➜ Le card sul desk sono trascinabili e ridimensionabili.</div>
-          <div>➜ Puoi esportare/importare il desk come file JSON.</div>
+          <div>➜ Le card sul desk sono trascinabili, ridimensionabili e collegabili.</div>
+          <div>➜ Esporta/importa il desk come file JSON.</div>
         </div>
 
         <input type="file" id="input-image" accept="image/*" />
@@ -578,6 +637,7 @@
       </aside>
 
       <section class="canvas" id="canvas">
+        <svg id="connector-layer" class="connector-layer"></svg>
         <div class="canvas-grid" aria-hidden="true"></div>
       </section>
     </main>
@@ -585,6 +645,7 @@
 
   <script>
     const canvas = document.getElementById('canvas');
+    const connectorLayer = document.getElementById('connector-layer');
     const toolText = document.getElementById('tool-text');
     const toolImage = document.getElementById('tool-image');
     const toolPdf = document.getElementById('tool-pdf');
@@ -599,6 +660,9 @@
     let cardIdCounter = 0;
     let currentSelectedCard = null;
 
+    let connectors = [];
+    let connectorStartCard = null;
+
     function bringToFront(card) {
       zIndexCounter++;
       card.style.zIndex = zIndexCounter;
@@ -607,6 +671,7 @@
       }
       card.classList.add('selected');
       currentSelectedCard = card;
+      updateConnectors();
     }
 
     function createCardBase(type, title) {
@@ -636,7 +701,15 @@
 
       const titleEl = document.createElement('div');
       titleEl.className = 'card-title';
-      titleEl.textContent = title || (type === 'text' ? 'Nota' : type === 'image' ? 'Immagine' : type === 'pdf' ? 'Documento PDF' : 'Pagina web');
+      titleEl.textContent =
+        title ||
+        (type === 'text'
+          ? 'Nota'
+          : type === 'image'
+          ? 'Immagine'
+          : type === 'pdf'
+          ? 'Documento PDF'
+          : 'Pagina web');
 
       headerLeft.appendChild(icon);
       headerLeft.appendChild(titleEl);
@@ -644,25 +717,22 @@
       const headerActions = document.createElement('div');
       headerActions.className = 'card-header-actions';
 
+      const toggleButton = document.createElement('button');
+      toggleButton.className = 'icon-button';
+      toggleButton.title = 'Apri/chiudi contenuto';
+      toggleButton.innerHTML = '▾';
+
       const centerButton = document.createElement('button');
       centerButton.className = 'icon-button';
       centerButton.title = 'Centra nel desk';
       centerButton.innerHTML = '●';
-      centerButton.addEventListener('click', (e) => {
-        e.stopPropagation();
-        centerCard(card);
-      });
 
       const closeButton = document.createElement('button');
       closeButton.className = 'icon-button danger';
       closeButton.title = 'Elimina';
       closeButton.innerHTML = '✕';
-      closeButton.addEventListener('click', (e) => {
-        e.stopPropagation();
-        card.remove();
-        if (currentSelectedCard === card) currentSelectedCard = null;
-      });
 
+      headerActions.appendChild(toggleButton);
       headerActions.appendChild(centerButton);
       headerActions.appendChild(closeButton);
 
@@ -679,20 +749,75 @@
       const resize = document.createElement('div');
       resize.className = 'resize-handle';
 
+      const connectorHandle = document.createElement('div');
+      connectorHandle.className = 'connector-handle';
+
       card.appendChild(header);
       card.appendChild(body);
       card.appendChild(resize);
+      card.appendChild(connectorHandle);
 
       canvas.appendChild(card);
 
       makeDraggable(card, header);
       makeResizable(card, resize);
 
+      // Selezione / front
       card.addEventListener('mousedown', () => {
         bringToFront(card);
       });
 
+      // Toggle apri/chiudi
+      toggleButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleCollapse(card, toggleButton);
+      });
+
+      // Centra
+      centerButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        centerCard(card);
+      });
+
+      // Elimina
+      closeButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = card.dataset.cardId;
+        removeConnectorsForCard(id);
+        card.remove();
+        if (currentSelectedCard === card) currentSelectedCard = null;
+        updateConnectors();
+      });
+
+      // Doppio click header per apri/chiudi
+      header.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        toggleCollapse(card, toggleButton);
+      });
+
+      // Connettori: click sul pallino
+      connectorHandle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        handleConnectorClick(card);
+      });
+
       return { card, bodyInner, titleEl };
+    }
+
+    function toggleCollapse(card, btn) {
+      const isCollapsed = card.classList.contains('collapsed');
+      if (isCollapsed) {
+        card.classList.remove('collapsed');
+        if (card.dataset.prevHeight) {
+          card.style.height = card.dataset.prevHeight;
+        }
+        btn.innerHTML = '▾';
+      } else {
+        card.dataset.prevHeight = card.style.height || card.getBoundingClientRect().height + 'px';
+        card.classList.add('collapsed');
+        btn.innerHTML = '▴';
+      }
+      updateConnectors();
     }
 
     function centerCard(card) {
@@ -702,6 +827,7 @@
       const top = rect.top + (rect.height - cardRect.height) / 2;
       card.style.left = left - rect.left + 'px';
       card.style.top = top - rect.top + 'px';
+      updateConnectors();
     }
 
     function makeDraggable(card, handle) {
@@ -732,6 +858,7 @@
         const dy = e.clientY - startY;
         card.style.left = initialLeft + dx + 'px';
         card.style.top = initialTop + dy + 'px';
+        updateConnectors();
       }
 
       function onMouseUp() {
@@ -772,6 +899,7 @@
         const newHeight = Math.max(140, startHeight + dy);
         card.style.width = newWidth + 'px';
         card.style.height = newHeight + 'px';
+        updateConnectors();
       }
 
       function onMouseUp() {
@@ -782,7 +910,117 @@
       }
     }
 
-    // Creazione tipi di card
+    // --- Connettori ---
+
+    function handleConnectorClick(card) {
+      if (!connectorStartCard) {
+        // Inizio connessione
+        connectorStartCard = card;
+        bringToFront(card);
+      } else if (connectorStartCard === card) {
+        // Clic di nuovo sullo stesso: annullo
+        connectorStartCard = null;
+      } else {
+        // Secondo card: crea connettore
+        createConnector(connectorStartCard, card);
+        connectorStartCard = null;
+      }
+    }
+
+    function createConnector(fromCard, toCard) {
+      const fromId = fromCard.dataset.cardId;
+      const toId = toCard.dataset.cardId;
+      if (!fromId || !toId || fromId === toId) return;
+
+      // Evita duplicati identici
+      if (connectors.some(c => c.fromId === fromId && c.toId === toId)) return;
+
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.classList.add('connector-path');
+      const id = 'conn-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+      path.dataset.connectorId = id;
+
+      connectorLayer.appendChild(path);
+
+      const conn = { id, fromId, toId, pathEl: path };
+      connectors.push(conn);
+
+      // Tasto destro per eliminare il singolo connettore
+      path.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        removeConnectorById(id);
+      });
+
+      updateConnectors();
+    }
+
+    function removeConnectorById(id) {
+      const idx = connectors.findIndex(c => c.id === id);
+      if (idx !== -1) {
+        const conn = connectors[idx];
+        if (conn.pathEl && conn.pathEl.parentNode) {
+          conn.pathEl.parentNode.removeChild(conn.pathEl);
+        }
+        connectors.splice(idx, 1);
+      }
+    }
+
+    function removeConnectorsForCard(cardId) {
+      const remaining = [];
+      connectors.forEach(c => {
+        if (c.fromId === cardId || c.toId === cardId) {
+          if (c.pathEl && c.pathEl.parentNode) {
+            c.pathEl.parentNode.removeChild(c.pathEl);
+          }
+        } else {
+          remaining.push(c);
+        }
+      });
+      connectors = remaining;
+    }
+
+    function updateConnectors() {
+      const canvasRect = canvas.getBoundingClientRect();
+      const toRemove = [];
+
+      connectors.forEach(conn => {
+        const fromCard = canvas.querySelector('.desk-card[data-card-id="' + conn.fromId + '"]');
+        const toCard = canvas.querySelector('.desk-card[data-card-id="' + conn.toId + '"]');
+
+        if (!fromCard || !toCard) {
+          toRemove.push(conn.id);
+          return;
+        }
+
+        const fromRect = fromCard.getBoundingClientRect();
+        const toRect = toCard.getBoundingClientRect();
+
+        const startX = fromRect.right - canvasRect.left;
+        const startY = fromRect.top + fromRect.height / 2 - canvasRect.top;
+        const endX = toRect.left - canvasRect.left;
+        const endY = toRect.top + toRect.height / 2 - canvasRect.top;
+
+        const offset = Math.max(40, Math.abs(endX - startX) / 3);
+
+        const d = [
+          'M', startX, startY,
+          'C', startX + offset, startY,
+               endX - offset, endY,
+               endX, endY
+        ].join(' ');
+
+        conn.pathEl.setAttribute('d', d);
+      });
+
+      toRemove.forEach(id => removeConnectorById(id));
+    }
+
+    window.addEventListener('resize', () => {
+      updateConnectors();
+    });
+
+    // --- Creazione tipi di card ---
+
     function createTextCard(initialText) {
       const { card, bodyInner } = createCardBase('text', 'Nota');
       const textarea = document.createElement('div');
@@ -791,11 +1029,12 @@
       textarea.innerHTML = initialText || '';
       bodyInner.appendChild(textarea);
       bringToFront(card);
+      updateConnectors();
       return card;
     }
 
     function createImageCard(dataUrl, name) {
-      const { card, bodyInner, titleEl } = createCardBase('image', name || 'Immagine');
+      const { card, bodyInner } = createCardBase('image', name || 'Immagine');
       const img = document.createElement('img');
       img.className = 'card-image';
       img.src = dataUrl;
@@ -803,11 +1042,12 @@
       card.dataset.content = dataUrl;
       card.dataset.name = name || 'immagine';
       bringToFront(card);
+      updateConnectors();
       return card;
     }
 
     function createPdfCard(dataUrl, name) {
-      const { card, bodyInner, titleEl } = createCardBase('pdf', name || 'Documento PDF');
+      const { card, bodyInner } = createCardBase('pdf', name || 'Documento PDF');
       const embed = document.createElement('iframe');
       embed.className = 'card-embed';
       embed.src = dataUrl;
@@ -815,6 +1055,7 @@
       card.dataset.content = dataUrl;
       card.dataset.name = name || 'documento.pdf';
       bringToFront(card);
+      updateConnectors();
       return card;
     }
 
@@ -822,7 +1063,7 @@
       const cleanUrl = (url || '').trim();
       if (!cleanUrl) return null;
       const displayTitle = cleanUrl.length > 30 ? cleanUrl.slice(0, 28) + '…' : cleanUrl;
-      const { card, bodyInner, titleEl } = createCardBase('web', displayTitle);
+      const { card, bodyInner } = createCardBase('web', displayTitle);
       const iframe = document.createElement('iframe');
       iframe.className = 'card-iframe';
       iframe.src = cleanUrl;
@@ -830,6 +1071,7 @@
       bodyInner.appendChild(iframe);
       card.dataset.url = cleanUrl;
       bringToFront(card);
+      updateConnectors();
       return card;
     }
 
@@ -873,16 +1115,17 @@
     });
 
     toolWeb.addEventListener('click', () => {
-      const url = window.prompt('Inserisci l\'URL della pagina web da incorporare:');
+      const url = window.prompt("Inserisci l'URL della pagina web da incorporare:");
       if (!url) return;
       createWebCard(url);
     });
 
-    // Esporta / importa desk
+    // --- Esporta / importa desk ---
+
     function serializeDesk() {
       const cards = Array.from(canvas.querySelectorAll('.desk-card'));
       const canvasRect = canvas.getBoundingClientRect();
-      return cards.map((card) => {
+      const cardData = cards.map((card) => {
         const rect = card.getBoundingClientRect();
         const type = card.dataset.type;
         const payload = { type };
@@ -902,9 +1145,21 @@
           y: rect.top - canvasRect.top,
           width: rect.width,
           height: rect.height,
+          collapsed: card.classList.contains('collapsed'),
           payload,
         };
       });
+
+      const connectorData = connectors.map(c => ({
+        id: c.id,
+        fromId: c.fromId,
+        toId: c.toId,
+      }));
+
+      return {
+        cards: cardData,
+        connectors: connectorData,
+      };
     }
 
     function exportDesk() {
@@ -922,17 +1177,38 @@
 
     function clearDesk() {
       canvas.querySelectorAll('.desk-card').forEach((card) => card.remove());
+      connectors.forEach(c => {
+        if (c.pathEl && c.pathEl.parentNode) {
+          c.pathEl.parentNode.removeChild(c.pathEl);
+        }
+      });
+      connectors = [];
       currentSelectedCard = null;
+      connectorStartCard = null;
     }
 
     function importDeskFromFile(file) {
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
-          const data = JSON.parse(e.target.result);
+          const raw = JSON.parse(e.target.result);
+
           clearDesk();
-          const canvasRect = canvas.getBoundingClientRect();
-          data.forEach((item) => {
+
+          let cardData = [];
+          let connectorData = [];
+
+          if (Array.isArray(raw)) {
+            // Vecchio formato: solo array di card
+            cardData = raw;
+          } else if (raw && typeof raw === 'object') {
+            cardData = raw.cards || [];
+            connectorData = raw.connectors || [];
+          }
+
+          const createdCards = {};
+
+          cardData.forEach((item) => {
             let card = null;
             if (item.type === 'text') {
               card = createTextCard(item.payload && item.payload.html ? item.payload.html : '');
@@ -949,8 +1225,23 @@
               card.style.top = item.y + 'px';
               card.style.width = item.width + 'px';
               card.style.height = item.height + 'px';
+              if (item.collapsed) {
+                card.classList.add('collapsed');
+              }
+              createdCards[item.id] = card;
             }
           });
+
+          connectors = [];
+          connectorData.forEach((c) => {
+            const fromCard = createdCards[c.fromId];
+            const toCard = createdCards[c.toId];
+            if (fromCard && toCard) {
+              createConnector(fromCard, toCard);
+            }
+          });
+
+          updateConnectors();
         } catch (err) {
           console.error('Errore nel file di desk:', err);
           alert('File non valido o corrotto.');
