@@ -310,11 +310,11 @@
     #preview-body {
       flex: 1;
       display: flex;
-      justify-content: center;      /* CENTRA orizzontalmente */
-      align-items: flex-start;      /* parte dall’alto */
+      justify-content: flex-start;
+      align-items: flex-start;
       background: #f9fafb;
       overflow-y: auto;
-      overflow-x: hidden;          /* niente scroll orizzontale */
+      overflow-x: hidden;
     }
 
     #preview-image-wrapper {
@@ -480,6 +480,8 @@
   const previewCloseBtn = document.getElementById("preview-close-btn");
   const previewOpenTabBtn = document.getElementById("preview-open-tab-btn");
   const previewBody = document.getElementById("preview-body");
+  const previewContent = document.getElementById("preview-content");
+  const previewHeaderEl = document.getElementById("preview-header");
 
   function createSourceId() {
     pendingSourceId += 1;
@@ -783,12 +785,11 @@
     const isLocalImage = node.type === "file" && mime.startsWith("image/");
     const isRemoteImage = node.type === "url" && isImageUrl(node.url);
 
-    // PDF → nuova scheda (lettore nativo del browser)
+    // PDF → nuova scheda
     if (isPdf(node)) {
       let src = null;
       if (node.type === "url" && node.url) src = node.url;
       else if (node.type === "file" && node.objectUrl) src = node.objectUrl;
-
       if (src) {
         window.open(src, "_blank");
         return;
@@ -804,7 +805,6 @@
     currentPreviewUrl = null;
     previewOpenTabBtn.style.display = "none";
 
-    // reset trasformazioni/overflow
     previewFrame.style.transform = "";
     previewFrame.style.transformOrigin = "";
     previewFrame.style.width = "100%";
@@ -841,21 +841,20 @@
 
     previewModal.classList.add("active");
 
-    // Adatto la pagina web alla larghezza del riquadro
     if (shouldScaleWebPage) {
       requestAnimationFrame(() => {
-        const containerRect = previewBody.getBoundingClientRect();
-        const containerWidth = containerRect.width || 800;
+        const contentRect = previewContent.getBoundingClientRect();
+        const headerRect = previewHeaderEl.getBoundingClientRect();
 
-        // larghezza "base" del sito: 1024px
-        const designWidth = Math.max(1024, containerWidth);
-        // scala: se il riquadro è più stretto di 1024, riduco; se è più largo, lascio 1:1
-        const scale = containerWidth < designWidth ? (containerWidth / designWidth) : 1;
+        const containerWidth = contentRect.width;
+        const containerHeight = contentRect.height - headerRect.height;
+
+        const designWidth = 1280; // larghezza "virtuale" della pagina
+        const scale = containerWidth / designWidth;
 
         previewFrame.style.transformOrigin = "top left";
         previewFrame.style.width = designWidth + "px";
-        // più alto per compensare la scala, così si può scorrere in verticale
-        previewFrame.style.height = (containerRect.height / scale) + "px";
+        previewFrame.style.height = (containerHeight / scale) + "px";
         previewFrame.style.transform = "scale(" + scale + ")";
         previewBody.style.overflowX = "hidden";
         previewBody.style.overflowY = "auto";
@@ -895,7 +894,7 @@
     }
   });
 
-  /* --- SALVATAGGIO: file JSON in Download + autosalvataggio locale --- */
+  /* --- SALVATAGGIO --- */
 
   function saveToLocalStorageAuto() {
     const data = { nodes, links, sourceItems };
