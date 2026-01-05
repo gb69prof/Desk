@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <title>Desk interattivo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root {
+      --bg-app: #f4f5f7;
+      --bg-canvas: #f9fafb;
+      --card-bg: #ffffff;
+      --accent: #3b82f6;
+      --accent-soft: rgba(59, 130, 246, 0.08);
+      --border-subtle: #e5e7eb;
+      --text-main: #111827;
+      --text-muted: #6b7280;
+      --shadow-soft: 0 12px 30px rgba(15, 23, 42, 0.12);
+      --radius-card: 20px;
+      --radius-pill: 999px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text-main);
+      background: var(--bg-app);
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Top bar */
+    .topbar {
+      height: 56px;
+      padding: 0 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      backdrop-filter: blur(10px);
+      background: linear-gradient(to right, rgba(248, 250, 252, 0.9), rgba(241, 245, 249, 0.9));
+      border-bottom: 1px solid rgba(148, 163, 184, 0.35);
+    }
+
+    .topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .app-logo {
+      width: 26px;
+      height: 26px;
+      border-radius: 10px;
+      background: radial-gradient(circle at 0 0, #a855f7, #3b82f6);
+      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.25);
+    }
+
+    .app-title {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #0f172a;
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .pill-button {
+      border-radius: var(--radius-pill);
+      border: 1px solid rgba(148, 163, 184, 0.7);
+      background: #ffffff;
+      padding: 6px 14px;
+      font-size: 13px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.08s ease;
+    }
+
+    .pill-button.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #f9fafb;
+      box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+    }
+
+    .pill-button:hover {
+      background: #f3f4f6;
+      box-shadow: 0 5px 14px rgba(148, 163, 184, 0.3);
+      transform: translateY(-1px);
+    }
+
+    .pill-button.primary:hover {
+      background: #2563eb;
+    }
+
+    .pill-button span.icon {
+      font-size: 15px;
+      line-height: 1;
+    }
+
+    /* Layout principale */
+    .main {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+      padding: 10px 10px 14px 10px;
+      gap: 10px;
+    }
+
+    /* Sidebar strumenti */
+    .sidebar {
+      width: 260px;
+      min-width: 230px;
+      background: #f9fafb;
+      border-radius: 18px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
+      padding: 14px 14px 16px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .sidebar-title {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #6b7280;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .sidebar-title span.badge {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: rgba(59, 130, 246, 0.08);
+      color: #1d4ed8;
+      border: 1px solid rgba(59, 130, 246, 0.2);
+    }
+
+    .tool-list {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
+    .tool-button {
+      border-radius: 14px;
+      border: 1px solid var(--border-subtle);
+      background: #ffffff;
+      box-shadow: 0 4px 10px rgba(15, 23, 42, 0.06);
+      padding: 8px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: background 0.12s ease, transform 0.08s ease, box-shadow 0.12s ease;
+    }
+
+    .tool-button:hover {
+      background: #f3f4ff;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(79, 70, 229, 0.18);
+    }
+
+    .tool-main {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tool-icon {
+      width: 26px;
+      height: 26px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+    }
+
+    .tool-icon.text {
+      background: rgba(59, 130, 246, 0.12);
+      color: #1d4ed8;
+    }
+
+    .tool-icon.image {
+      background: rgba(16, 185, 129, 0.12);
+      color: #047857;
+    }
+
+    .tool-icon.pdf {
+      background: rgba(239, 68, 68, 0.12);
+      color: #b91c1c;
+    }
+
+    .tool-icon.web {
+      background: rgba(234, 179, 8, 0.12);
+      color: #92400e;
+    }
+
+    .tool-text-title {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .tool-text-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .tool-badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      border: 1px dashed rgba(148, 163, 184, 0.8);
+      color: #6b7280;
+    }
+
+    .sidebar-footer {
+      margin-top: auto;
+      font-size: 11px;
+      color: var(--text-muted);
+      border-top: 1px dashed rgba(148, 163, 184, 0.6);
+      padding-top: 8px;
+    }
+
+    /* Canvas */
+    .canvas {
+      flex: 1;
+      position: relative;
+      border-radius: 22px;
+      background: radial-gradient(circle at 0 0, rgba(129, 140, 248, 0.18), transparent 55%),
+                  radial-gradient(circle at 100% 100%, rgba(45, 212, 191, 0.18), transparent 55%),
+                  var(--bg-canvas);
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      box-shadow: 0 18px 42px rgba(15, 23, 42, 0.2);
+      overflow: hidden;
+      background-size: cover;
+    }
+
+    .canvas-grid {
+      position: absolute;
+      inset: 0;
+      background-image: linear-gradient(to right, rgba(148, 163, 184, 0.15) 1px, transparent 1px),
+                        linear-gradient(to bottom, rgba(148, 163, 184, 0.12) 1px, transparent 1px);
+      background-size: 32px 32px;
+      opacity: 0.35;
+      pointer-events: none;
+    }
+
+    /* Card sul desk */
+    .desk-card {
+      position: absolute;
+      min-width: 220px;
+      min-height: 140px;
+      max-width: 620px;
+      background: var(--card-bg);
+      border-radius: var(--radius-card);
+      box-shadow: var(--shadow-soft);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      transition: box-shadow 0.12s ease, transform 0.08s ease, border-color 0.12s ease;
+    }
+
+    .desk-card.selected {
+      border-color: var(--accent);
+      box-shadow: 0 16px 40px rgba(59, 130, 246, 0.32);
+      transform: translateY(-1px);
+    }
+
+    .card-header {
+      height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 8px 0 10px;
+      background: linear-gradient(to right, rgba(15, 23, 42, 0.04), rgba(148, 163, 184, 0.04));
+      cursor: move;
+      user-select: none;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.35);
+    }
+
+    .card-header-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      overflow: hidden;
+    }
+
+    .card-type-icon {
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+    }
+
+    .card-type-text {
+      background: rgba(59, 130, 246, 0.15);
+      color: #1d4ed8;
+    }
+
+    .card-type-image {
+      background: rgba(16, 185, 129, 0.15);
+      color: #047857;
+    }
+
+    .card-type-pdf {
+      background: rgba(239, 68, 68, 0.16);
+      color: #b91c1c;
+    }
+
+    .card-type-web {
+      background: rgba(234, 179, 8, 0.15);
+      color: #92400e;
+    }
+
+    .card-title {
+      font-size: 12px;
+      font-weight: 500;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      max-width: 140px;
+    }
+
+    .card-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .icon-button {
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      border: none;
+      background: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 13px;
+      color: #6b7280;
+      transition: background 0.12s ease, color 0.12s ease, transform 0.08s ease;
+    }
+
+    .icon-button:hover {
+      background: rgba(148, 163, 184, 0.25);
+      color: #111827;
+      transform: translateY(-0.5px);
+    }
+
+    .icon-button.danger:hover {
+      background: rgba(248, 113, 113, 0.16);
+      color: #b91c1c;
+    }
+
+    .card-body {
+      flex: 1;
+      padding: 8px 10px 8px 10px;
+      overflow: hidden;
+      display: flex;
+      align-items: stretch;
+      justify-content: stretch;
+    }
+
+    .card-body-inner {
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      border-radius: 12px;
+    }
+
+    .card-text-content {
+      width: 100%;
+      min-height: 80px;
+      padding: 6px 6px 10px 6px;
+      font-size: 13px;
+      line-height: 1.5;
+      outline: none;
+      border-radius: 10px;
+      border: 1px solid rgba(209, 213, 219, 0.8);
+      background: #f9fafb;
+      resize: none;
+    }
+
+    .card-text-content:focus {
+      background: #ffffff;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.25);
+    }
+
+    .card-embed,
+    .card-iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+      border-radius: 12px;
+      background: #111827;
+    }
+
+    .card-image {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      border-radius: 12px;
+      display: block;
+      background: #020617;
+    }
+
+    .resize-handle {
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      right: 6px;
+      bottom: 6px;
+      border-radius: 4px;
+      background: rgba(15, 23, 42, 0.06);
+      border: 1px solid rgba(148, 163, 184, 0.9);
+      cursor: se-resize;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      color: #6b7280;
+      backdrop-filter: blur(4px);
+    }
+
+    .resize-handle::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-right: 1px solid rgba(107, 114, 128, 0.9);
+      border-bottom: 1px solid rgba(107, 114, 128, 0.9);
+      transform: translate(1px, 1px);
+    }
+
+    /* File inputs nascosti */
+    input[type="file"] {
+      display: none;
+    }
+
+    /* Helper per testo piccolo */
+    .muted-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .import-input-label {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    @media (max-width: 900px) {
+      .sidebar {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="topbar-left">
+        <div class="app-logo" aria-hidden="true"></div>
+        <div class="app-title">Desk interattivo</div>
+      </div>
+      <div class="topbar-right">
+        <button class="pill-button" id="btn-clear">
+          <span class="icon">🧹</span>
+          <span>Nuovo desk</span>
+        </button>
+        <button class="pill-button" id="btn-export">
+          <span class="icon">💾</span>
+          <span>Esporta</span>
+        </button>
+        <label class="pill-button" for="import-file">
+          <span class="icon">📂</span>
+          <span>Importa</span>
+        </label>
+        <input type="file" id="import-file" accept="application/json" />
+      </div>
+    </header>
+
+    <main class="main">
+      <aside class="sidebar">
+        <div class="sidebar-title">
+          Strumenti
+          <span class="badge">Desk</span>
+        </div>
+        <div class="tool-list">
+          <button class="tool-button" id="tool-text">
+            <div class="tool-main">
+              <div class="tool-icon text">T</div>
+              <div>
+                <div class="tool-text-title">Nota di testo</div>
+                <div class="tool-text-sub">Appunti, idee, schemi veloci</div>
+              </div>
+            </div>
+            <div class="tool-badge">TXT</div>
+          </button>
+
+          <button class="tool-button" id="tool-image">
+            <div class="tool-main">
+              <div class="tool-icon image">🖼️</div>
+              <div>
+                <div class="tool-text-title">Immagine</div>
+                <div class="tool-text-sub">Foto, schemi, slide</div>
+              </div>
+            </div>
+            <div class="tool-badge">IMG</div>
+          </button>
+
+          <button class="tool-button" id="tool-pdf">
+            <div class="tool-main">
+              <div class="tool-icon pdf">📄</div>
+              <div>
+                <div class="tool-text-title">PDF</div>
+                <div class="tool-text-sub">Articoli, schede, testi</div>
+              </div>
+            </div>
+            <div class="tool-badge">PDF</div>
+          </button>
+
+          <button class="tool-button" id="tool-web">
+            <div class="tool-main">
+              <div class="tool-icon web">🌐</div>
+              <div>
+                <div class="tool-text-title">Pagina web</div>
+                <div class="tool-text-sub">Risorsa online nel desk</div>
+              </div>
+            </div>
+            <div class="tool-badge">URL</div>
+          </button>
+        </div>
+
+        <div class="sidebar-footer">
+          <div>➜ Le card sul desk sono trascinabili e ridimensionabili.</div>
+          <div>➜ Puoi esportare/importare il desk come file JSON.</div>
+        </div>
+
+        <input type="file" id="input-image" accept="image/*" />
+        <input type="file" id="input-pdf" accept="application/pdf" />
+      </aside>
+
+      <section class="canvas" id="canvas">
+        <div class="canvas-grid" aria-hidden="true"></div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const toolText = document.getElementById('tool-text');
+    const toolImage = document.getElementById('tool-image');
+    const toolPdf = document.getElementById('tool-pdf');
+    const toolWeb = document.getElementById('tool-web');
+    const inputImage = document.getElementById('input-image');
+    const inputPdf = document.getElementById('input-pdf');
+    const btnClear = document.getElementById('btn-clear');
+    const btnExport = document.getElementById('btn-export');
+    const importFile = document.getElementById('import-file');
+
+    let zIndexCounter = 10;
+    let cardIdCounter = 0;
+    let currentSelectedCard = null;
+
+    function bringToFront(card) {
+      zIndexCounter++;
+      card.style.zIndex = zIndexCounter;
+      if (currentSelectedCard && currentSelectedCard !== card) {
+        currentSelectedCard.classList.remove('selected');
+      }
+      card.classList.add('selected');
+      currentSelectedCard = card;
+    }
+
+    function createCardBase(type, title) {
+      const card = document.createElement('div');
+      card.className = 'desk-card';
+      card.dataset.cardId = String(++cardIdCounter);
+      card.dataset.type = type;
+      card.style.left = Math.round(40 + Math.random() * 60) + 'px';
+      card.style.top = Math.round(40 + Math.random() * 40) + 'px';
+      card.style.width = '320px';
+      card.style.height = type === 'text' ? '200px' : '260px';
+      card.style.zIndex = zIndexCounter;
+
+      const header = document.createElement('div');
+      header.className = 'card-header';
+
+      const headerLeft = document.createElement('div');
+      headerLeft.className = 'card-header-left';
+
+      const icon = document.createElement('div');
+      icon.className = 'card-type-icon';
+      if (type === 'text') icon.classList.add('card-type-text');
+      if (type === 'image') icon.classList.add('card-type-image');
+      if (type === 'pdf') icon.classList.add('card-type-pdf');
+      if (type === 'web') icon.classList.add('card-type-web');
+      icon.textContent = type === 'text' ? 'T' : type === 'image' ? '🖼️' : type === 'pdf' ? 'PDF' : 'WWW';
+
+      const titleEl = document.createElement('div');
+      titleEl.className = 'card-title';
+      titleEl.textContent = title || (type === 'text' ? 'Nota' : type === 'image' ? 'Immagine' : type === 'pdf' ? 'Documento PDF' : 'Pagina web');
+
+      headerLeft.appendChild(icon);
+      headerLeft.appendChild(titleEl);
+
+      const headerActions = document.createElement('div');
+      headerActions.className = 'card-header-actions';
+
+      const centerButton = document.createElement('button');
+      centerButton.className = 'icon-button';
+      centerButton.title = 'Centra nel desk';
+      centerButton.innerHTML = '●';
+      centerButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        centerCard(card);
+      });
+
+      const closeButton = document.createElement('button');
+      closeButton.className = 'icon-button danger';
+      closeButton.title = 'Elimina';
+      closeButton.innerHTML = '✕';
+      closeButton.addEventListener('click', (e) => {
+        e.stopPropagation();
+        card.remove();
+        if (currentSelectedCard === card) currentSelectedCard = null;
+      });
+
+      headerActions.appendChild(centerButton);
+      headerActions.appendChild(closeButton);
+
+      header.appendChild(headerLeft);
+      header.appendChild(headerActions);
+
+      const body = document.createElement('div');
+      body.className = 'card-body';
+
+      const bodyInner = document.createElement('div');
+      bodyInner.className = 'card-body-inner';
+      body.appendChild(bodyInner);
+
+      const resize = document.createElement('div');
+      resize.className = 'resize-handle';
+
+      card.appendChild(header);
+      card.appendChild(body);
+      card.appendChild(resize);
+
+      canvas.appendChild(card);
+
+      makeDraggable(card, header);
+      makeResizable(card, resize);
+
+      card.addEventListener('mousedown', () => {
+        bringToFront(card);
+      });
+
+      return { card, bodyInner, titleEl };
+    }
+
+    function centerCard(card) {
+      const rect = canvas.getBoundingClientRect();
+      const cardRect = card.getBoundingClientRect();
+      const left = rect.left + (rect.width - cardRect.width) / 2;
+      const top = rect.top + (rect.height - cardRect.height) / 2;
+      card.style.left = left - rect.left + 'px';
+      card.style.top = top - rect.top + 'px';
+    }
+
+    function makeDraggable(card, handle) {
+      let isDragging = false;
+      let startX = 0;
+      let startY = 0;
+      let initialLeft = 0;
+      let initialTop = 0;
+
+      handle.addEventListener('mousedown', (e) => {
+        if (e.button !== 0) return;
+        isDragging = true;
+        bringToFront(card);
+        startX = e.clientX;
+        startY = e.clientY;
+        const rect = card.getBoundingClientRect();
+        const canvasRect = canvas.getBoundingClientRect();
+        initialLeft = rect.left - canvasRect.left;
+        initialTop = rect.top - canvasRect.top;
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+        e.preventDefault();
+      });
+
+      function onMouseMove(e) {
+        if (!isDragging) return;
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        card.style.left = initialLeft + dx + 'px';
+        card.style.top = initialTop + dy + 'px';
+      }
+
+      function onMouseUp() {
+        if (!isDragging) return;
+        isDragging = false;
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+      }
+    }
+
+    function makeResizable(card, handle) {
+      let isResizing = false;
+      let startX = 0;
+      let startY = 0;
+      let startWidth = 0;
+      let startHeight = 0;
+
+      handle.addEventListener('mousedown', (e) => {
+        if (e.button !== 0) return;
+        isResizing = true;
+        bringToFront(card);
+        startX = e.clientX;
+        startY = e.clientY;
+        const rect = card.getBoundingClientRect();
+        startWidth = rect.width;
+        startHeight = rect.height;
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+        e.preventDefault();
+        e.stopPropagation();
+      });
+
+      function onMouseMove(e) {
+        if (!isResizing) return;
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        const newWidth = Math.max(220, startWidth + dx);
+        const newHeight = Math.max(140, startHeight + dy);
+        card.style.width = newWidth + 'px';
+        card.style.height = newHeight + 'px';
+      }
+
+      function onMouseUp() {
+        if (!isResizing) return;
+        isResizing = false;
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+      }
+    }
+
+    // Creazione tipi di card
+    function createTextCard(initialText) {
+      const { card, bodyInner } = createCardBase('text', 'Nota');
+      const textarea = document.createElement('div');
+      textarea.className = 'card-text-content';
+      textarea.contentEditable = 'true';
+      textarea.innerHTML = initialText || '';
+      bodyInner.appendChild(textarea);
+      bringToFront(card);
+      return card;
+    }
+
+    function createImageCard(dataUrl, name) {
+      const { card, bodyInner, titleEl } = createCardBase('image', name || 'Immagine');
+      const img = document.createElement('img');
+      img.className = 'card-image';
+      img.src = dataUrl;
+      bodyInner.appendChild(img);
+      card.dataset.content = dataUrl;
+      card.dataset.name = name || 'immagine';
+      bringToFront(card);
+      return card;
+    }
+
+    function createPdfCard(dataUrl, name) {
+      const { card, bodyInner, titleEl } = createCardBase('pdf', name || 'Documento PDF');
+      const embed = document.createElement('iframe');
+      embed.className = 'card-embed';
+      embed.src = dataUrl;
+      bodyInner.appendChild(embed);
+      card.dataset.content = dataUrl;
+      card.dataset.name = name || 'documento.pdf';
+      bringToFront(card);
+      return card;
+    }
+
+    function createWebCard(url) {
+      const cleanUrl = (url || '').trim();
+      if (!cleanUrl) return null;
+      const displayTitle = cleanUrl.length > 30 ? cleanUrl.slice(0, 28) + '…' : cleanUrl;
+      const { card, bodyInner, titleEl } = createCardBase('web', displayTitle);
+      const iframe = document.createElement('iframe');
+      iframe.className = 'card-iframe';
+      iframe.src = cleanUrl;
+      iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-forms allow-popups');
+      bodyInner.appendChild(iframe);
+      card.dataset.url = cleanUrl;
+      bringToFront(card);
+      return card;
+    }
+
+    // Eventi tool
+    toolText.addEventListener('click', () => {
+      createTextCard('Scrivi qui la tua nota…');
+    });
+
+    toolImage.addEventListener('click', () => {
+      inputImage.value = '';
+      inputImage.click();
+    });
+
+    inputImage.addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const dataUrl = ev.target.result;
+        const card = createImageCard(dataUrl, file.name);
+        card.dataset.type = 'image';
+      };
+      reader.readAsDataURL(file);
+    });
+
+    toolPdf.addEventListener('click', () => {
+      inputPdf.value = '';
+      inputPdf.click();
+    });
+
+    inputPdf.addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const dataUrl = ev.target.result;
+        const card = createPdfCard(dataUrl, file.name);
+        card.dataset.type = 'pdf';
+      };
+      reader.readAsDataURL(file);
+    });
+
+    toolWeb.addEventListener('click', () => {
+      const url = window.prompt('Inserisci l\'URL della pagina web da incorporare:');
+      if (!url) return;
+      createWebCard(url);
+    });
+
+    // Esporta / importa desk
+    function serializeDesk() {
+      const cards = Array.from(canvas.querySelectorAll('.desk-card'));
+      const canvasRect = canvas.getBoundingClientRect();
+      return cards.map((card) => {
+        const rect = card.getBoundingClientRect();
+        const type = card.dataset.type;
+        const payload = { type };
+        if (type === 'text') {
+          const textEl = card.querySelector('.card-text-content');
+          payload.html = textEl ? textEl.innerHTML : '';
+        } else if (type === 'image' || type === 'pdf') {
+          payload.dataUrl = card.dataset.content || '';
+          payload.name = card.dataset.name || '';
+        } else if (type === 'web') {
+          payload.url = card.dataset.url || '';
+        }
+        return {
+          id: card.dataset.cardId,
+          type,
+          x: rect.left - canvasRect.left,
+          y: rect.top - canvasRect.top,
+          width: rect.width,
+          height: rect.height,
+          payload,
+        };
+      });
+    }
+
+    function exportDesk() {
+      const data = serializeDesk();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'desk-interattivo.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function clearDesk() {
+      canvas.querySelectorAll('.desk-card').forEach((card) => card.remove());
+      currentSelectedCard = null;
+    }
+
+    function importDeskFromFile(file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = JSON.parse(e.target.result);
+          clearDesk();
+          const canvasRect = canvas.getBoundingClientRect();
+          data.forEach((item) => {
+            let card = null;
+            if (item.type === 'text') {
+              card = createTextCard(item.payload && item.payload.html ? item.payload.html : '');
+            } else if (item.type === 'image') {
+              card = createImageCard(item.payload.dataUrl, item.payload.name);
+            } else if (item.type === 'pdf') {
+              card = createPdfCard(item.payload.dataUrl, item.payload.name);
+            } else if (item.type === 'web') {
+              card = createWebCard(item.payload.url);
+            }
+            if (card) {
+              card.dataset.cardId = item.id;
+              card.style.left = item.x + 'px';
+              card.style.top = item.y + 'px';
+              card.style.width = item.width + 'px';
+              card.style.height = item.height + 'px';
+            }
+          });
+        } catch (err) {
+          console.error('Errore nel file di desk:', err);
+          alert('File non valido o corrotto.');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    btnClear.addEventListener('click', () => {
+      if (confirm('Svuotare il desk?')) {
+        clearDesk();
+      }
+    });
+
+    btnExport.addEventListener('click', () => {
+      exportDesk();
+    });
+
+    importFile.addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      importDeskFromFile(file);
+      importFile.value = '';
+    });
+  </script>
+</body>
+</html>
