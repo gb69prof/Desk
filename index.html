@@ -310,8 +310,11 @@
     #preview-body {
       flex: 1;
       display: flex;
+      justify-content: center;      /* CENTRA orizzontalmente */
+      align-items: flex-start;      /* parte dall’alto */
       background: #f9fafb;
-      overflow: auto;
+      overflow-y: auto;
+      overflow-x: hidden;          /* niente scroll orizzontale */
     }
 
     #preview-image-wrapper {
@@ -330,12 +333,10 @@
     }
 
     #preview-frame {
-      flex: 1;
       border: none;
       width: 100%;
       height: 100%;
       display: none;
-      overflow: auto;
       background: white;
     }
 
@@ -794,7 +795,7 @@
       }
     }
 
-    // Reset modal
+    // reset modal
     previewTitle.textContent = node.title;
     previewFrame.style.display = "none";
     previewImageWrapper.style.display = "none";
@@ -803,17 +804,17 @@
     currentPreviewUrl = null;
     previewOpenTabBtn.style.display = "none";
 
-    // Reset trasformazioni e overflow del contenitore
+    // reset trasformazioni/overflow
     previewFrame.style.transform = "";
     previewFrame.style.transformOrigin = "";
     previewFrame.style.width = "100%";
     previewFrame.style.height = "100%";
-    previewBody.style.overflowX = "auto";
     previewBody.style.overflowY = "auto";
+    previewBody.style.overflowX = "hidden";
 
     let shouldScaleWebPage = false;
 
-    // Immagini (locali o URL)
+    // IMMAGINI
     if (isLocalImage || isRemoteImage) {
       const src = node.type === "file" ? node.objectUrl : node.url;
       previewImageWrapper.style.display = "block";
@@ -821,7 +822,7 @@
       currentPreviewUrl = src;
       previewOpenTabBtn.style.display = "inline-block";
     } else {
-      // Altri tipi → iframe
+      // LINK / ALTRI FILE
       let src = null;
       if (node.type === "url" && node.url) src = node.url;
       else if (node.type === "file" && node.objectUrl) src = node.objectUrl;
@@ -832,7 +833,6 @@
         currentPreviewUrl = src;
         previewOpenTabBtn.style.display = "inline-block";
 
-        // Solo per le pagine web (URL) ridimensiono per evitare scroll orizzontale
         if (node.type === "url") {
           shouldScaleWebPage = true;
         }
@@ -841,20 +841,22 @@
 
     previewModal.classList.add("active");
 
-    // Applico la scala dopo che il modal è visibile
+    // Adatto la pagina web alla larghezza del riquadro
     if (shouldScaleWebPage) {
       requestAnimationFrame(() => {
         const containerRect = previewBody.getBoundingClientRect();
         const containerWidth = containerRect.width || 800;
-        const designWidth = 1280; // larghezza "virtuale" della pagina
-        const scale = containerWidth / designWidth;
+
+        // larghezza "base" del sito: 1024px
+        const designWidth = Math.max(1024, containerWidth);
+        // scala: se il riquadro è più stretto di 1024, riduco; se è più largo, lascio 1:1
+        const scale = containerWidth < designWidth ? (containerWidth / designWidth) : 1;
 
         previewFrame.style.transformOrigin = "top left";
         previewFrame.style.width = designWidth + "px";
-        previewFrame.style.height = containerRect.height + "px";
+        // più alto per compensare la scala, così si può scorrere in verticale
+        previewFrame.style.height = (containerRect.height / scale) + "px";
         previewFrame.style.transform = "scale(" + scale + ")";
-
-        // Scroll solo verticale nel riquadro
         previewBody.style.overflowX = "hidden";
         previewBody.style.overflowY = "auto";
       });
@@ -899,9 +901,7 @@
     const data = { nodes, links, sourceItems };
     try {
       localStorage.setItem("desk-la-fonte", JSON.stringify(data));
-    } catch (e) {
-      // se localStorage è pieno o bloccato, pazienza
-    }
+    } catch (e) {}
   }
 
   function downloadDesk() {
@@ -1087,8 +1087,6 @@
   }
 
   function initExample() {
-    // Nessun contenuto iniziale: se c'è qualcosa in localStorage lo carico,
-    // altrimenti desk e fonti restano vuoti.
     loadFromLocalStorage();
   }
 
