@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Desk interattivo</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     :root {
       --bg-app: #f4f5f7;
@@ -19,12 +19,9 @@
       --radius-pill: 999px;
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
-    html,
-    body {
+    html, body {
       margin: 0;
       padding: 0;
       height: 100%;
@@ -99,21 +96,10 @@
       transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.08s ease;
     }
 
-    .pill-button.primary {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: #f9fafb;
-      box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
-    }
-
     .pill-button:hover {
       background: #f3f4f6;
       box-shadow: 0 5px 14px rgba(148, 163, 184, 0.3);
       transform: translateY(-1px);
-    }
-
-    .pill-button.primary:hover {
-      background: #2563eb;
     }
 
     .pill-button span.icon {
@@ -121,16 +107,14 @@
       line-height: 1;
     }
 
-    /* Layout principale */
     .main {
       flex: 1;
       display: flex;
-      overflow: hidden;
-      padding: 10px 10px 14px 10px;
+      padding: 10px;
       gap: 10px;
+      overflow: hidden;
     }
 
-    /* Sidebar strumenti */
     .sidebar {
       width: 260px;
       min-width: 230px;
@@ -138,7 +122,7 @@
       border-radius: 18px;
       border: 1px solid rgba(148, 163, 184, 0.4);
       box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
-      padding: 14px 14px 16px 14px;
+      padding: 14px;
       display: flex;
       flex-direction: column;
       gap: 12px;
@@ -251,7 +235,6 @@
       padding-top: 8px;
     }
 
-    /* Canvas */
     .canvas {
       flex: 1;
       position: relative;
@@ -263,7 +246,6 @@
       border: 1px solid rgba(148, 163, 184, 0.4);
       box-shadow: 0 18px 42px rgba(15, 23, 42, 0.2);
       overflow: hidden;
-      background-size: cover;
     }
 
     .canvas-grid {
@@ -277,7 +259,6 @@
       pointer-events: none;
     }
 
-    /* Layer connettori */
     .connector-layer {
       position: absolute;
       inset: 0;
@@ -300,7 +281,6 @@
       stroke-width: 3;
     }
 
-    /* Card sul desk */
     .desk-card {
       position: absolute;
       min-width: 220px;
@@ -354,25 +334,10 @@
       font-size: 13px;
     }
 
-    .card-type-text {
-      background: rgba(59, 130, 246, 0.15);
-      color: #1d4ed8;
-    }
-
-    .card-type-image {
-      background: rgba(16, 185, 129, 0.15);
-      color: #047857;
-    }
-
-    .card-type-pdf {
-      background: rgba(239, 68, 68, 0.16);
-      color: #b91c1c;
-    }
-
-    .card-type-web {
-      background: rgba(234, 179, 8, 0.15);
-      color: #92400e;
-    }
+    .card-type-text { background: rgba(59, 130, 246, 0.15); color: #1d4ed8; }
+    .card-type-image { background: rgba(16, 185, 129, 0.15); color: #047857; }
+    .card-type-pdf { background: rgba(239, 68, 68, 0.16); color: #b91c1c; }
+    .card-type-web { background: rgba(234, 179, 8, 0.15); color: #92400e; }
 
     .card-title {
       font-size: 12px;
@@ -443,7 +408,6 @@
       border-radius: 10px;
       border: 1px solid rgba(209, 213, 219, 0.8);
       background: #f9fafb;
-      resize: none;
     }
 
     .card-text-content:focus {
@@ -452,8 +416,7 @@
       box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.25);
     }
 
-    .card-embed,
-    .card-iframe {
+    .card-embed, .card-iframe {
       width: 100%;
       height: 100%;
       border: none;
@@ -499,7 +462,6 @@
       transform: translate(1px, 1px);
     }
 
-    /* Handle per connettori */
     .connector-handle {
       position: absolute;
       width: 12px;
@@ -526,28 +488,17 @@
       background: #3b82f6;
     }
 
-    /* Stato collassato (apri/chiudi) */
     .desk-card.collapsed {
       height: 46px !important;
     }
 
-    .desk-card.collapsed .card-body {
-      display: none;
-    }
+    .desk-card.collapsed .card-body { display: none; }
+    .desk-card.collapsed .resize-handle { display: none; }
 
-    .desk-card.collapsed .resize-handle {
-      display: none;
-    }
-
-    /* File inputs nascosti */
-    input[type="file"] {
-      display: none;
-    }
+    input[type="file"] { display: none; }
 
     @media (max-width: 900px) {
-      .sidebar {
-        display: none;
-      }
+      .sidebar { display: none; }
     }
   </style>
 </head>
@@ -555,23 +506,13 @@
   <div class="app">
     <header class="topbar">
       <div class="topbar-left">
-        <div class="app-logo" aria-hidden="true"></div>
+        <div class="app-logo"></div>
         <div class="app-title">Desk interattivo</div>
       </div>
       <div class="topbar-right">
         <button class="pill-button" id="btn-clear">
-          <span class="icon">🧹</span>
-          <span>Nuovo desk</span>
+          <span class="icon">🧹</span><span>Nuovo desk</span>
         </button>
-        <button class="pill-button" id="btn-export">
-          <span class="icon">💾</span>
-          <span>Esporta</span>
-        </button>
-        <label class="pill-button" for="import-file">
-          <span class="icon">📂</span>
-          <span>Importa</span>
-        </label>
-        <input type="file" id="import-file" accept="application/json" />
       </div>
     </header>
 
@@ -587,685 +528,420 @@
               <div class="tool-icon text">T</div>
               <div>
                 <div class="tool-text-title">Nota di testo</div>
-                <div class="tool-text-sub">Appunti, idee, schemi veloci</div>
+                <div class="tool-text-sub">Appunti, idee, schemi</div>
               </div>
             </div>
             <div class="tool-badge">TXT</div>
           </button>
-
-          <button class="tool-button" id="tool-image">
-            <div class="tool-main">
-              <div class="tool-icon image">🖼️</div>
-              <div>
-                <div class="tool-text-title">Immagine</div>
-                <div class="tool-text-sub">Foto, schemi, slide</div>
-              </div>
-            </div>
-            <div class="tool-badge">IMG</div>
-          </button>
-
-          <button class="tool-button" id="tool-pdf">
-            <div class="tool-main">
-              <div class="tool-icon pdf">📄</div>
-              <div>
-                <div class="tool-text-title">PDF</div>
-                <div class="tool-text-sub">Articoli, schede, testi</div>
-              </div>
-            </div>
-            <div class="tool-badge">PDF</div>
-          </button>
-
-          <button class="tool-button" id="tool-web">
-            <div class="tool-main">
-              <div class="tool-icon web">🌐</div>
-              <div>
-                <div class="tool-text-title">Pagina web</div>
-                <div class="tool-text-sub">Risorsa online nel desk</div>
-              </div>
-            </div>
-            <div class="tool-badge">URL</div>
-          </button>
         </div>
-
         <div class="sidebar-footer">
-          <div>➜ Le card sul desk sono trascinabili, ridimensionabili e collegabili.</div>
-          <div>➜ Esporta/importa il desk come file JSON.</div>
+          ➜ Le card si spostano, si ridimensionano e si collegano.<br>
+          ➜ Click sul pallino blu per creare connettori.
         </div>
-
-        <input type="file" id="input-image" accept="image/*" />
-        <input type="file" id="input-pdf" accept="application/pdf" />
       </aside>
 
       <section class="canvas" id="canvas">
-        <svg id="connector-layer" class="connector-layer"></svg>
-        <div class="canvas-grid" aria-hidden="true"></div>
+        <svg id="connector-layer" class="connector-layer" xmlns="http://www.w3.org/2000/svg"></svg>
+        <div class="canvas-grid"></div>
       </section>
     </main>
   </div>
 
   <script>
-    const canvas = document.getElementById('canvas');
-    const connectorLayer = document.getElementById('connector-layer');
-    const toolText = document.getElementById('tool-text');
-    const toolImage = document.getElementById('tool-image');
-    const toolPdf = document.getElementById('tool-pdf');
-    const toolWeb = document.getElementById('tool-web');
-    const inputImage = document.getElementById('input-image');
-    const inputPdf = document.getElementById('input-pdf');
-    const btnClear = document.getElementById('btn-clear');
-    const btnExport = document.getElementById('btn-export');
-    const importFile = document.getElementById('import-file');
+    (function() {
+      var canvas = document.getElementById('canvas');
+      var connectorLayer = document.getElementById('connector-layer');
+      var toolText = document.getElementById('tool-text');
+      var btnClear = document.getElementById('btn-clear');
 
-    let zIndexCounter = 10;
-    let cardIdCounter = 0;
-    let currentSelectedCard = null;
+      var zIndexCounter = 10;
+      var cardIdCounter = 0;
+      var currentSelectedCard = null;
 
-    let connectors = [];
-    let connectorStartCard = null;
+      var connectors = [];
+      var connectorStartCard = null;
 
-    function bringToFront(card) {
-      zIndexCounter++;
-      card.style.zIndex = zIndexCounter;
-      if (currentSelectedCard && currentSelectedCard !== card) {
-        currentSelectedCard.classList.remove('selected');
-      }
-      card.classList.add('selected');
-      currentSelectedCard = card;
-      updateConnectors();
-    }
-
-    function createCardBase(type, title) {
-      const card = document.createElement('div');
-      card.className = 'desk-card';
-      card.dataset.cardId = String(++cardIdCounter);
-      card.dataset.type = type;
-      card.style.left = Math.round(40 + Math.random() * 60) + 'px';
-      card.style.top = Math.round(40 + Math.random() * 40) + 'px';
-      card.style.width = '320px';
-      card.style.height = type === 'text' ? '200px' : '260px';
-      card.style.zIndex = zIndexCounter;
-
-      const header = document.createElement('div');
-      header.className = 'card-header';
-
-      const headerLeft = document.createElement('div');
-      headerLeft.className = 'card-header-left';
-
-      const icon = document.createElement('div');
-      icon.className = 'card-type-icon';
-      if (type === 'text') icon.classList.add('card-type-text');
-      if (type === 'image') icon.classList.add('card-type-image');
-      if (type === 'pdf') icon.classList.add('card-type-pdf');
-      if (type === 'web') icon.classList.add('card-type-web');
-      icon.textContent = type === 'text' ? 'T' : type === 'image' ? '🖼️' : type === 'pdf' ? 'PDF' : 'WWW';
-
-      const titleEl = document.createElement('div');
-      titleEl.className = 'card-title';
-      titleEl.textContent =
-        title ||
-        (type === 'text'
-          ? 'Nota'
-          : type === 'image'
-          ? 'Immagine'
-          : type === 'pdf'
-          ? 'Documento PDF'
-          : 'Pagina web');
-
-      headerLeft.appendChild(icon);
-      headerLeft.appendChild(titleEl);
-
-      const headerActions = document.createElement('div');
-      headerActions.className = 'card-header-actions';
-
-      const toggleButton = document.createElement('button');
-      toggleButton.className = 'icon-button';
-      toggleButton.title = 'Apri/chiudi contenuto';
-      toggleButton.innerHTML = '▾';
-
-      const centerButton = document.createElement('button');
-      centerButton.className = 'icon-button';
-      centerButton.title = 'Centra nel desk';
-      centerButton.innerHTML = '●';
-
-      const closeButton = document.createElement('button');
-      closeButton.className = 'icon-button danger';
-      closeButton.title = 'Elimina';
-      closeButton.innerHTML = '✕';
-
-      headerActions.appendChild(toggleButton);
-      headerActions.appendChild(centerButton);
-      headerActions.appendChild(closeButton);
-
-      header.appendChild(headerLeft);
-      header.appendChild(headerActions);
-
-      const body = document.createElement('div');
-      body.className = 'card-body';
-
-      const bodyInner = document.createElement('div');
-      bodyInner.className = 'card-body-inner';
-      body.appendChild(bodyInner);
-
-      const resize = document.createElement('div');
-      resize.className = 'resize-handle';
-
-      const connectorHandle = document.createElement('div');
-      connectorHandle.className = 'connector-handle';
-
-      card.appendChild(header);
-      card.appendChild(body);
-      card.appendChild(resize);
-      card.appendChild(connectorHandle);
-
-      canvas.appendChild(card);
-
-      makeDraggable(card, header);
-      makeResizable(card, resize);
-
-      // Selezione / front
-      card.addEventListener('mousedown', () => {
-        bringToFront(card);
-      });
-
-      // Toggle apri/chiudi
-      toggleButton.addEventListener('click', (e) => {
-        e.stopPropagation();
-        toggleCollapse(card, toggleButton);
-      });
-
-      // Centra
-      centerButton.addEventListener('click', (e) => {
-        e.stopPropagation();
-        centerCard(card);
-      });
-
-      // Elimina
-      closeButton.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const id = card.dataset.cardId;
-        removeConnectorsForCard(id);
-        card.remove();
-        if (currentSelectedCard === card) currentSelectedCard = null;
-        updateConnectors();
-      });
-
-      // Doppio click header per apri/chiudi
-      header.addEventListener('dblclick', (e) => {
-        e.stopPropagation();
-        toggleCollapse(card, toggleButton);
-      });
-
-      // Connettori: click sul pallino
-      connectorHandle.addEventListener('click', (e) => {
-        e.stopPropagation();
-        handleConnectorClick(card);
-      });
-
-      return { card, bodyInner, titleEl };
-    }
-
-    function toggleCollapse(card, btn) {
-      const isCollapsed = card.classList.contains('collapsed');
-      if (isCollapsed) {
-        card.classList.remove('collapsed');
-        if (card.dataset.prevHeight) {
-          card.style.height = card.dataset.prevHeight;
+      function bringToFront(card) {
+        zIndexCounter++;
+        card.style.zIndex = zIndexCounter;
+        if (currentSelectedCard && currentSelectedCard !== card) {
+          currentSelectedCard.classList.remove('selected');
         }
-        btn.innerHTML = '▾';
-      } else {
-        card.dataset.prevHeight = card.style.height || card.getBoundingClientRect().height + 'px';
-        card.classList.add('collapsed');
-        btn.innerHTML = '▴';
-      }
-      updateConnectors();
-    }
-
-    function centerCard(card) {
-      const rect = canvas.getBoundingClientRect();
-      const cardRect = card.getBoundingClientRect();
-      const left = rect.left + (rect.width - cardRect.width) / 2;
-      const top = rect.top + (rect.height - cardRect.height) / 2;
-      card.style.left = left - rect.left + 'px';
-      card.style.top = top - rect.top + 'px';
-      updateConnectors();
-    }
-
-    function makeDraggable(card, handle) {
-      let isDragging = false;
-      let startX = 0;
-      let startY = 0;
-      let initialLeft = 0;
-      let initialTop = 0;
-
-      handle.addEventListener('mousedown', (e) => {
-        if (e.button !== 0) return;
-        isDragging = true;
-        bringToFront(card);
-        startX = e.clientX;
-        startY = e.clientY;
-        const rect = card.getBoundingClientRect();
-        const canvasRect = canvas.getBoundingClientRect();
-        initialLeft = rect.left - canvasRect.left;
-        initialTop = rect.top - canvasRect.top;
-        document.addEventListener('mousemove', onMouseMove);
-        document.addEventListener('mouseup', onMouseUp);
-        e.preventDefault();
-      });
-
-      function onMouseMove(e) {
-        if (!isDragging) return;
-        const dx = e.clientX - startX;
-        const dy = e.clientY - startY;
-        card.style.left = initialLeft + dx + 'px';
-        card.style.top = initialTop + dy + 'px';
+        card.classList.add('selected');
+        currentSelectedCard = card;
         updateConnectors();
       }
 
-      function onMouseUp() {
-        if (!isDragging) return;
-        isDragging = false;
-        document.removeEventListener('mousemove', onMouseMove);
-        document.removeEventListener('mouseup', onMouseUp);
-      }
-    }
-
-    function makeResizable(card, handle) {
-      let isResizing = false;
-      let startX = 0;
-      let startY = 0;
-      let startWidth = 0;
-      let startHeight = 0;
-
-      handle.addEventListener('mousedown', (e) => {
-        if (e.button !== 0) return;
-        isResizing = true;
-        bringToFront(card);
-        startX = e.clientX;
-        startY = e.clientY;
-        const rect = card.getBoundingClientRect();
-        startWidth = rect.width;
-        startHeight = rect.height;
-        document.addEventListener('mousemove', onMouseMove);
-        document.addEventListener('mouseup', onMouseUp);
-        e.preventDefault();
-        e.stopPropagation();
-      });
-
-      function onMouseMove(e) {
-        if (!isResizing) return;
-        const dx = e.clientX - startX;
-        const dy = e.clientY - startY;
-        const newWidth = Math.max(220, startWidth + dx);
-        const newHeight = Math.max(140, startHeight + dy);
-        card.style.width = newWidth + 'px';
-        card.style.height = newHeight + 'px';
-        updateConnectors();
-      }
-
-      function onMouseUp() {
-        if (!isResizing) return;
-        isResizing = false;
-        document.removeEventListener('mousemove', onMouseMove);
-        document.removeEventListener('mouseup', onMouseUp);
-      }
-    }
-
-    // --- Connettori ---
-
-    function handleConnectorClick(card) {
-      if (!connectorStartCard) {
-        // Inizio connessione
-        connectorStartCard = card;
-        bringToFront(card);
-      } else if (connectorStartCard === card) {
-        // Clic di nuovo sullo stesso: annullo
-        connectorStartCard = null;
-      } else {
-        // Secondo card: crea connettore
-        createConnector(connectorStartCard, card);
-        connectorStartCard = null;
-      }
-    }
-
-    function createConnector(fromCard, toCard) {
-      const fromId = fromCard.dataset.cardId;
-      const toId = toCard.dataset.cardId;
-      if (!fromId || !toId || fromId === toId) return;
-
-      // Evita duplicati identici
-      if (connectors.some(c => c.fromId === fromId && c.toId === toId)) return;
-
-      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      path.classList.add('connector-path');
-      const id = 'conn-' + Date.now() + '-' + Math.random().toString(36).slice(2);
-      path.dataset.connectorId = id;
-
-      connectorLayer.appendChild(path);
-
-      const conn = { id, fromId, toId, pathEl: path };
-      connectors.push(conn);
-
-      // Tasto destro per eliminare il singolo connettore
-      path.addEventListener('contextmenu', (e) => {
-        e.preventDefault();
-        removeConnectorById(id);
-      });
-
-      updateConnectors();
-    }
-
-    function removeConnectorById(id) {
-      const idx = connectors.findIndex(c => c.id === id);
-      if (idx !== -1) {
-        const conn = connectors[idx];
-        if (conn.pathEl && conn.pathEl.parentNode) {
-          conn.pathEl.parentNode.removeChild(conn.pathEl);
+      function toggleCollapse(card, btn) {
+        var isCollapsed = card.classList.contains('collapsed');
+        if (isCollapsed) {
+          card.classList.remove('collapsed');
+          if (card.dataset.prevHeight) {
+            card.style.height = card.dataset.prevHeight;
+          }
+          btn.innerHTML = '▾';
+        } else {
+          card.dataset.prevHeight = card.style.height || (card.getBoundingClientRect().height + 'px');
+          card.classList.add('collapsed');
+          btn.innerHTML = '▴';
         }
-        connectors.splice(idx, 1);
+        updateConnectors();
       }
-    }
 
-    function removeConnectorsForCard(cardId) {
-      const remaining = [];
-      connectors.forEach(c => {
-        if (c.fromId === cardId || c.toId === cardId) {
+      function centerCard(card) {
+        var rect = canvas.getBoundingClientRect();
+        var cardRect = card.getBoundingClientRect();
+        var left = rect.left + (rect.width - cardRect.width) / 2;
+        var top = rect.top + (rect.height - cardRect.height) / 2;
+        card.style.left = (left - rect.left) + 'px';
+        card.style.top = (top - rect.top) + 'px';
+        updateConnectors();
+      }
+
+      function makeDraggable(card, handle) {
+        var isDragging = false;
+        var startX = 0;
+        var startY = 0;
+        var initialLeft = 0;
+        var initialTop = 0;
+
+        handle.addEventListener('mousedown', function(e) {
+          if (e.button !== 0) return;
+          isDragging = true;
+          bringToFront(card);
+          startX = e.clientX;
+          startY = e.clientY;
+          var rect = card.getBoundingClientRect();
+          var canvasRect = canvas.getBoundingClientRect();
+          initialLeft = rect.left - canvasRect.left;
+          initialTop = rect.top - canvasRect.top;
+          document.addEventListener('mousemove', onMouseMove);
+          document.addEventListener('mouseup', onMouseUp);
+          e.preventDefault();
+        });
+
+        function onMouseMove(e) {
+          if (!isDragging) return;
+          var dx = e.clientX - startX;
+          var dy = e.clientY - startY;
+          card.style.left = (initialLeft + dx) + 'px';
+          card.style.top = (initialTop + dy) + 'px';
+          updateConnectors();
+        }
+
+        function onMouseUp() {
+          if (!isDragging) return;
+          isDragging = false;
+          document.removeEventListener('mousemove', onMouseMove);
+          document.removeEventListener('mouseup', onMouseUp);
+        }
+      }
+
+      function makeResizable(card, handle) {
+        var isResizing = false;
+        var startX = 0;
+        var startY = 0;
+        var startWidth = 0;
+        var startHeight = 0;
+
+        handle.addEventListener('mousedown', function(e) {
+          if (e.button !== 0) return;
+          isResizing = true;
+          bringToFront(card);
+          startX = e.clientX;
+          startY = e.clientY;
+          var rect = card.getBoundingClientRect();
+          startWidth = rect.width;
+          startHeight = rect.height;
+          document.addEventListener('mousemove', onMouseMove);
+          document.addEventListener('mouseup', onMouseUp);
+          e.preventDefault();
+          e.stopPropagation();
+        });
+
+        function onMouseMove(e) {
+          if (!isResizing) return;
+          var dx = e.clientX - startX;
+          var dy = e.clientY - startY;
+          var newWidth = Math.max(220, startWidth + dx);
+          var newHeight = Math.max(140, startHeight + dy);
+          card.style.width = newWidth + 'px';
+          card.style.height = newHeight + 'px';
+          updateConnectors();
+        }
+
+        function onMouseUp() {
+          if (!isResizing) return;
+          isResizing = false;
+          document.removeEventListener('mousemove', onMouseMove);
+          document.removeEventListener('mouseup', onMouseUp);
+        }
+      }
+
+      function handleConnectorClick(card) {
+        if (!connectorStartCard) {
+          connectorStartCard = card;
+          bringToFront(card);
+        } else if (connectorStartCard === card) {
+          connectorStartCard = null;
+        } else {
+          createConnector(connectorStartCard, card);
+          connectorStartCard = null;
+        }
+      }
+
+      function createConnector(fromCard, toCard) {
+        var fromId = fromCard.dataset.cardId;
+        var toId = toCard.dataset.cardId;
+        if (!fromId || !toId || fromId === toId) return;
+
+        var already = false;
+        for (var i = 0; i < connectors.length; i++) {
+          if (connectors[i].fromId === fromId && connectors[i].toId === toId) {
+            already = true;
+            break;
+          }
+        }
+        if (already) return;
+
+        var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('class', 'connector-path');
+        var id = 'conn-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+        path.setAttribute('data-connector-id', id);
+        connectorLayer.appendChild(path);
+
+        var conn = { id: id, fromId: fromId, toId: toId, pathEl: path };
+        connectors.push(conn);
+
+        path.addEventListener('contextmenu', function(e) {
+          e.preventDefault();
+          removeConnectorById(id);
+        });
+
+        updateConnectors();
+      }
+
+      function removeConnectorById(id) {
+        var remaining = [];
+        for (var i = 0; i < connectors.length; i++) {
+          var c = connectors[i];
+          if (c.id === id) {
+            if (c.pathEl && c.pathEl.parentNode) {
+              c.pathEl.parentNode.removeChild(c.pathEl);
+            }
+          } else {
+            remaining.push(c);
+          }
+        }
+        connectors = remaining;
+      }
+
+      function removeConnectorsForCard(cardId) {
+        var remaining = [];
+        for (var i = 0; i < connectors.length; i++) {
+          var c = connectors[i];
+          if (c.fromId === cardId || c.toId === cardId) {
+            if (c.pathEl && c.pathEl.parentNode) {
+              c.pathEl.parentNode.removeChild(c.pathEl);
+            }
+          } else {
+            remaining.push(c);
+          }
+        }
+        connectors = remaining;
+      }
+
+      function updateConnectors() {
+        var canvasRect = canvas.getBoundingClientRect();
+        var toRemove = [];
+
+        for (var i = 0; i < connectors.length; i++) {
+          var conn = connectors[i];
+          var fromCard = canvas.querySelector('.desk-card[data-card-id="' + conn.fromId + '"]');
+          var toCard = canvas.querySelector('.desk-card[data-card-id="' + conn.toId + '"]');
+
+          if (!fromCard || !toCard) {
+            toRemove.push(conn.id);
+            continue;
+          }
+
+          var fromRect = fromCard.getBoundingClientRect();
+          var toRect = toCard.getBoundingClientRect();
+
+          var startX = fromRect.right - canvasRect.left;
+          var startY = fromRect.top + fromRect.height / 2 - canvasRect.top;
+          var endX = toRect.left - canvasRect.left;
+          var endY = toRect.top + toRect.height / 2 - canvasRect.top;
+
+          var offset = Math.max(40, Math.abs(endX - startX) / 3);
+
+          var d = 'M ' + startX + ' ' + startY +
+                  ' C ' + (startX + offset) + ' ' + startY +
+                  ' ' + (endX - offset) + ' ' + endY +
+                  ' ' + endX + ' ' + endY;
+
+          conn.pathEl.setAttribute('d', d);
+        }
+
+        for (var j = 0; j < toRemove.length; j++) {
+          removeConnectorById(toRemove[j]);
+        }
+      }
+
+      window.addEventListener('resize', updateConnectors);
+
+      function createCardBase(type, title) {
+        var card = document.createElement('div');
+        card.className = 'desk-card';
+        card.dataset.cardId = String(++cardIdCounter);
+        card.dataset.type = type;
+        card.style.left = (40 + Math.random() * 80) + 'px';
+        card.style.top = (40 + Math.random() * 80) + 'px';
+        card.style.width = '320px';
+        card.style.height = type === 'text' ? '200px' : '260px';
+        card.style.zIndex = zIndexCounter;
+
+        var header = document.createElement('div');
+        header.className = 'card-header';
+
+        var headerLeft = document.createElement('div');
+        headerLeft.className = 'card-header-left';
+
+        var icon = document.createElement('div');
+        icon.className = 'card-type-icon';
+        if (type === 'text') icon.classList.add('card-type-text');
+        icon.textContent = type === 'text' ? 'T' : '?';
+
+        var titleEl = document.createElement('div');
+        titleEl.className = 'card-title';
+        titleEl.textContent = title || 'Nota';
+
+        headerLeft.appendChild(icon);
+        headerLeft.appendChild(titleEl);
+
+        var headerActions = document.createElement('div');
+        headerActions.className = 'card-header-actions';
+
+        var toggleButton = document.createElement('button');
+        toggleButton.className = 'icon-button';
+        toggleButton.title = 'Apri/chiudi contenuto';
+        toggleButton.innerHTML = '▾';
+
+        var centerButton = document.createElement('button');
+        centerButton.className = 'icon-button';
+        centerButton.title = 'Centra nel desk';
+        centerButton.innerHTML = '●';
+
+        var closeButton = document.createElement('button');
+        closeButton.className = 'icon-button danger';
+        closeButton.title = 'Elimina';
+        closeButton.innerHTML = '✕';
+
+        headerActions.appendChild(toggleButton);
+        headerActions.appendChild(centerButton);
+        headerActions.appendChild(closeButton);
+
+        header.appendChild(headerLeft);
+        header.appendChild(headerActions);
+
+        var body = document.createElement('div');
+        body.className = 'card-body';
+
+        var bodyInner = document.createElement('div');
+        bodyInner.className = 'card-body-inner';
+        body.appendChild(bodyInner);
+
+        var resize = document.createElement('div');
+        resize.className = 'resize-handle';
+
+        var connectorHandle = document.createElement('div');
+        connectorHandle.className = 'connector-handle';
+
+        card.appendChild(header);
+        card.appendChild(body);
+        card.appendChild(resize);
+        card.appendChild(connectorHandle);
+
+        canvas.appendChild(card);
+
+        makeDraggable(card, header);
+        makeResizable(card, resize);
+
+        card.addEventListener('mousedown', function() {
+          bringToFront(card);
+        });
+
+        toggleButton.addEventListener('click', function(e) {
+          e.stopPropagation();
+          toggleCollapse(card, toggleButton);
+        });
+
+        header.addEventListener('dblclick', function(e) {
+          e.stopPropagation();
+          toggleCollapse(card, toggleButton);
+        });
+
+        centerButton.addEventListener('click', function(e) {
+          e.stopPropagation();
+          centerCard(card);
+        });
+
+        closeButton.addEventListener('click', function(e) {
+          e.stopPropagation();
+          var id = card.dataset.cardId;
+          removeConnectorsForCard(id);
+          card.remove();
+          if (currentSelectedCard === card) currentSelectedCard = null;
+          updateConnectors();
+        });
+
+        connectorHandle.addEventListener('click', function(e) {
+          e.stopPropagation();
+          handleConnectorClick(card);
+        });
+
+        return { card: card, bodyInner: bodyInner };
+      }
+
+      function createTextCard(initialText) {
+        var base = createCardBase('text', 'Nota');
+        var card = base.card;
+        var bodyInner = base.bodyInner;
+        var textarea = document.createElement('div');
+        textarea.className = 'card-text-content';
+        textarea.contentEditable = 'true';
+        textarea.innerHTML = initialText || '';
+        bodyInner.appendChild(textarea);
+        bringToFront(card);
+        updateConnectors();
+        return card;
+      }
+
+      toolText.addEventListener('click', function() {
+        createTextCard('Scrivi qui la tua nota…');
+      });
+
+      btnClear.addEventListener('click', function() {
+        var cards = canvas.querySelectorAll('.desk-card');
+        for (var i = 0; i < cards.length; i++) {
+          cards[i].remove();
+        }
+        for (var j = 0; j < connectors.length; j++) {
+          var c = connectors[j];
           if (c.pathEl && c.pathEl.parentNode) {
             c.pathEl.parentNode.removeChild(c.pathEl);
           }
-        } else {
-          remaining.push(c);
         }
-      });
-      connectors = remaining;
-    }
-
-    function updateConnectors() {
-      const canvasRect = canvas.getBoundingClientRect();
-      const toRemove = [];
-
-      connectors.forEach(conn => {
-        const fromCard = canvas.querySelector('.desk-card[data-card-id="' + conn.fromId + '"]');
-        const toCard = canvas.querySelector('.desk-card[data-card-id="' + conn.toId + '"]');
-
-        if (!fromCard || !toCard) {
-          toRemove.push(conn.id);
-          return;
-        }
-
-        const fromRect = fromCard.getBoundingClientRect();
-        const toRect = toCard.getBoundingClientRect();
-
-        const startX = fromRect.right - canvasRect.left;
-        const startY = fromRect.top + fromRect.height / 2 - canvasRect.top;
-        const endX = toRect.left - canvasRect.left;
-        const endY = toRect.top + toRect.height / 2 - canvasRect.top;
-
-        const offset = Math.max(40, Math.abs(endX - startX) / 3);
-
-        const d = [
-          'M', startX, startY,
-          'C', startX + offset, startY,
-               endX - offset, endY,
-               endX, endY
-        ].join(' ');
-
-        conn.pathEl.setAttribute('d', d);
+        connectors = [];
+        currentSelectedCard = null;
+        connectorStartCard = null;
       });
 
-      toRemove.forEach(id => removeConnectorById(id));
-    }
-
-    window.addEventListener('resize', () => {
-      updateConnectors();
-    });
-
-    // --- Creazione tipi di card ---
-
-    function createTextCard(initialText) {
-      const { card, bodyInner } = createCardBase('text', 'Nota');
-      const textarea = document.createElement('div');
-      textarea.className = 'card-text-content';
-      textarea.contentEditable = 'true';
-      textarea.innerHTML = initialText || '';
-      bodyInner.appendChild(textarea);
-      bringToFront(card);
-      updateConnectors();
-      return card;
-    }
-
-    function createImageCard(dataUrl, name) {
-      const { card, bodyInner } = createCardBase('image', name || 'Immagine');
-      const img = document.createElement('img');
-      img.className = 'card-image';
-      img.src = dataUrl;
-      bodyInner.appendChild(img);
-      card.dataset.content = dataUrl;
-      card.dataset.name = name || 'immagine';
-      bringToFront(card);
-      updateConnectors();
-      return card;
-    }
-
-    function createPdfCard(dataUrl, name) {
-      const { card, bodyInner } = createCardBase('pdf', name || 'Documento PDF');
-      const embed = document.createElement('iframe');
-      embed.className = 'card-embed';
-      embed.src = dataUrl;
-      bodyInner.appendChild(embed);
-      card.dataset.content = dataUrl;
-      card.dataset.name = name || 'documento.pdf';
-      bringToFront(card);
-      updateConnectors();
-      return card;
-    }
-
-    function createWebCard(url) {
-      const cleanUrl = (url || '').trim();
-      if (!cleanUrl) return null;
-      const displayTitle = cleanUrl.length > 30 ? cleanUrl.slice(0, 28) + '…' : cleanUrl;
-      const { card, bodyInner } = createCardBase('web', displayTitle);
-      const iframe = document.createElement('iframe');
-      iframe.className = 'card-iframe';
-      iframe.src = cleanUrl;
-      iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-forms allow-popups');
-      bodyInner.appendChild(iframe);
-      card.dataset.url = cleanUrl;
-      bringToFront(card);
-      updateConnectors();
-      return card;
-    }
-
-    // Eventi tool
-    toolText.addEventListener('click', () => {
-      createTextCard('Scrivi qui la tua nota…');
-    });
-
-    toolImage.addEventListener('click', () => {
-      inputImage.value = '';
-      inputImage.click();
-    });
-
-    inputImage.addEventListener('change', (e) => {
-      const file = e.target.files && e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const dataUrl = ev.target.result;
-        const card = createImageCard(dataUrl, file.name);
-        card.dataset.type = 'image';
-      };
-      reader.readAsDataURL(file);
-    });
-
-    toolPdf.addEventListener('click', () => {
-      inputPdf.value = '';
-      inputPdf.click();
-    });
-
-    inputPdf.addEventListener('change', (e) => {
-      const file = e.target.files && e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const dataUrl = ev.target.result;
-        const card = createPdfCard(dataUrl, file.name);
-        card.dataset.type = 'pdf';
-      };
-      reader.readAsDataURL(file);
-    });
-
-    toolWeb.addEventListener('click', () => {
-      const url = window.prompt("Inserisci l'URL della pagina web da incorporare:");
-      if (!url) return;
-      createWebCard(url);
-    });
-
-    // --- Esporta / importa desk ---
-
-    function serializeDesk() {
-      const cards = Array.from(canvas.querySelectorAll('.desk-card'));
-      const canvasRect = canvas.getBoundingClientRect();
-      const cardData = cards.map((card) => {
-        const rect = card.getBoundingClientRect();
-        const type = card.dataset.type;
-        const payload = { type };
-        if (type === 'text') {
-          const textEl = card.querySelector('.card-text-content');
-          payload.html = textEl ? textEl.innerHTML : '';
-        } else if (type === 'image' || type === 'pdf') {
-          payload.dataUrl = card.dataset.content || '';
-          payload.name = card.dataset.name || '';
-        } else if (type === 'web') {
-          payload.url = card.dataset.url || '';
-        }
-        return {
-          id: card.dataset.cardId,
-          type,
-          x: rect.left - canvasRect.left,
-          y: rect.top - canvasRect.top,
-          width: rect.width,
-          height: rect.height,
-          collapsed: card.classList.contains('collapsed'),
-          payload,
-        };
+      // crea una nota di esempio all'avvio
+      window.addEventListener('load', function() {
+        createTextCard('Questa card si sposta, si ridimensiona e può essere collegata ad altre.');
       });
-
-      const connectorData = connectors.map(c => ({
-        id: c.id,
-        fromId: c.fromId,
-        toId: c.toId,
-      }));
-
-      return {
-        cards: cardData,
-        connectors: connectorData,
-      };
-    }
-
-    function exportDesk() {
-      const data = serializeDesk();
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'desk-interattivo.json';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }
-
-    function clearDesk() {
-      canvas.querySelectorAll('.desk-card').forEach((card) => card.remove());
-      connectors.forEach(c => {
-        if (c.pathEl && c.pathEl.parentNode) {
-          c.pathEl.parentNode.removeChild(c.pathEl);
-        }
-      });
-      connectors = [];
-      currentSelectedCard = null;
-      connectorStartCard = null;
-    }
-
-    function importDeskFromFile(file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const raw = JSON.parse(e.target.result);
-
-          clearDesk();
-
-          let cardData = [];
-          let connectorData = [];
-
-          if (Array.isArray(raw)) {
-            // Vecchio formato: solo array di card
-            cardData = raw;
-          } else if (raw && typeof raw === 'object') {
-            cardData = raw.cards || [];
-            connectorData = raw.connectors || [];
-          }
-
-          const createdCards = {};
-
-          cardData.forEach((item) => {
-            let card = null;
-            if (item.type === 'text') {
-              card = createTextCard(item.payload && item.payload.html ? item.payload.html : '');
-            } else if (item.type === 'image') {
-              card = createImageCard(item.payload.dataUrl, item.payload.name);
-            } else if (item.type === 'pdf') {
-              card = createPdfCard(item.payload.dataUrl, item.payload.name);
-            } else if (item.type === 'web') {
-              card = createWebCard(item.payload.url);
-            }
-            if (card) {
-              card.dataset.cardId = item.id;
-              card.style.left = item.x + 'px';
-              card.style.top = item.y + 'px';
-              card.style.width = item.width + 'px';
-              card.style.height = item.height + 'px';
-              if (item.collapsed) {
-                card.classList.add('collapsed');
-              }
-              createdCards[item.id] = card;
-            }
-          });
-
-          connectors = [];
-          connectorData.forEach((c) => {
-            const fromCard = createdCards[c.fromId];
-            const toCard = createdCards[c.toId];
-            if (fromCard && toCard) {
-              createConnector(fromCard, toCard);
-            }
-          });
-
-          updateConnectors();
-        } catch (err) {
-          console.error('Errore nel file di desk:', err);
-          alert('File non valido o corrotto.');
-        }
-      };
-      reader.readAsText(file);
-    }
-
-    btnClear.addEventListener('click', () => {
-      if (confirm('Svuotare il desk?')) {
-        clearDesk();
-      }
-    });
-
-    btnExport.addEventListener('click', () => {
-      exportDesk();
-    });
-
-    importFile.addEventListener('change', (e) => {
-      const file = e.target.files && e.target.files[0];
-      if (!file) return;
-      importDeskFromFile(file);
-      importFile.value = '';
-    });
+    })();
   </script>
 </body>
 </html>
