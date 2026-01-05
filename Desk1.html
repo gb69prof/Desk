@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8">
-  <title>Desk interattivo</title>
+  <title>Desk interattivo iPad</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     :root {
@@ -28,6 +28,9 @@
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       color: var(--text-main);
       background: var(--bg-app);
+      -webkit-user-select: none;
+      user-select: none;
+      touch-action: none; /* blocco lo scroll mentre trasciniamo sul canvas */
     }
 
     body {
@@ -42,36 +45,34 @@
       overflow: hidden;
     }
 
-    /* Top bar */
     .topbar {
-      height: 56px;
-      padding: 0 16px;
+      height: 52px;
+      padding: 0 14px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      backdrop-filter: blur(10px);
-      background: linear-gradient(to right, rgba(248, 250, 252, 0.9), rgba(241, 245, 249, 0.9));
-      border-bottom: 1px solid rgba(148, 163, 184, 0.35);
+      background: linear-gradient(to right, #f9fafb, #e5e7eb);
+      border-bottom: 1px solid rgba(148,163,184,0.5);
     }
 
     .topbar-left {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
     }
 
     .app-logo {
-      width: 26px;
-      height: 26px;
+      width: 24px;
+      height: 24px;
       border-radius: 10px;
       background: radial-gradient(circle at 0 0, #a855f7, #3b82f6);
-      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.25);
+      box-shadow: 0 6px 14px rgba(15, 23, 42, 0.25);
     }
 
     .app-title {
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 600;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.06em;
       text-transform: uppercase;
       color: #0f172a;
     }
@@ -79,18 +80,18 @@
     .topbar-right {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
     }
 
     .pill-button {
       border-radius: var(--radius-pill);
       border: 1px solid rgba(148, 163, 184, 0.7);
       background: #ffffff;
-      padding: 6px 14px;
-      font-size: 13px;
+      padding: 5px 12px;
+      font-size: 12px;
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
       cursor: pointer;
       color: var(--text-muted);
       transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.08s ease;
@@ -98,54 +99,54 @@
 
     .pill-button:hover {
       background: #f3f4f6;
-      box-shadow: 0 5px 14px rgba(148, 163, 184, 0.3);
+      box-shadow: 0 4px 10px rgba(148, 163, 184, 0.3);
       transform: translateY(-1px);
     }
 
     .pill-button span.icon {
-      font-size: 15px;
+      font-size: 14px;
       line-height: 1;
     }
 
     .main {
       flex: 1;
       display: flex;
-      padding: 10px;
-      gap: 10px;
+      padding: 8px;
+      gap: 8px;
       overflow: hidden;
     }
 
     .sidebar {
-      width: 260px;
-      min-width: 230px;
+      width: 240px;
+      min-width: 220px;
       background: #f9fafb;
-      border-radius: 18px;
+      border-radius: 16px;
       border: 1px solid rgba(148, 163, 184, 0.4);
-      box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
-      padding: 14px;
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+      padding: 12px;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
     }
 
     .sidebar-title {
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 600;
       letter-spacing: 0.08em;
       text-transform: uppercase;
       color: #6b7280;
       display: flex;
-      align-items: center;
       justify-content: space-between;
+      align-items: center;
     }
 
     .sidebar-title span.badge {
-      font-size: 11px;
-      padding: 3px 8px;
+      font-size: 10px;
+      padding: 2px 6px;
       border-radius: 999px;
-      background: rgba(59, 130, 246, 0.08);
+      background: rgba(59,130,246,0.08);
       color: #1d4ed8;
-      border: 1px solid rgba(59, 130, 246, 0.2);
+      border: 1px solid rgba(59,130,246,0.25);
     }
 
     .tool-list {
@@ -155,11 +156,11 @@
     }
 
     .tool-button {
-      border-radius: 14px;
+      border-radius: 12px;
       border: 1px solid var(--border-subtle);
       background: #ffffff;
-      box-shadow: 0 4px 10px rgba(15, 23, 42, 0.06);
-      padding: 8px 10px;
+      box-shadow: 0 3px 9px rgba(15, 23, 42, 0.06);
+      padding: 6px 8px;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -167,10 +168,9 @@
       transition: background 0.12s ease, transform 0.08s ease, box-shadow 0.12s ease;
     }
 
-    .tool-button:hover {
-      background: #f3f4ff;
-      transform: translateY(-1px);
-      box-shadow: 0 6px 18px rgba(79, 70, 229, 0.18);
+    .tool-button:active {
+      transform: scale(0.98);
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.18);
     }
 
     .tool-main {
@@ -180,33 +180,18 @@
     }
 
     .tool-icon {
-      width: 26px;
-      height: 26px;
-      border-radius: 10px;
+      width: 24px;
+      height: 24px;
+      border-radius: 9px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 15px;
+      font-size: 14px;
     }
 
     .tool-icon.text {
-      background: rgba(59, 130, 246, 0.12);
+      background: rgba(59,130,246,0.12);
       color: #1d4ed8;
-    }
-
-    .tool-icon.image {
-      background: rgba(16, 185, 129, 0.12);
-      color: #047857;
-    }
-
-    .tool-icon.pdf {
-      background: rgba(239, 68, 68, 0.12);
-      color: #b91c1c;
-    }
-
-    .tool-icon.web {
-      background: rgba(234, 179, 8, 0.12);
-      color: #92400e;
     }
 
     .tool-text-title {
@@ -220,8 +205,8 @@
     }
 
     .tool-badge {
-      font-size: 11px;
-      padding: 2px 8px;
+      font-size: 10px;
+      padding: 2px 6px;
       border-radius: 999px;
       border: 1px dashed rgba(148, 163, 184, 0.8);
       color: #6b7280;
@@ -232,19 +217,19 @@
       font-size: 11px;
       color: var(--text-muted);
       border-top: 1px dashed rgba(148, 163, 184, 0.6);
-      padding-top: 8px;
+      padding-top: 6px;
     }
 
     .canvas {
       flex: 1;
       position: relative;
-      border-radius: 22px;
+      border-radius: 20px;
       background:
         radial-gradient(circle at 0 0, rgba(129, 140, 248, 0.18), transparent 55%),
         radial-gradient(circle at 100% 100%, rgba(45, 212, 191, 0.18), transparent 55%),
         var(--bg-canvas);
-      border: 1px solid rgba(148, 163, 184, 0.4);
-      box-shadow: 0 18px 42px rgba(15, 23, 42, 0.2);
+      border: 1px solid rgba(148,163,184,0.4);
+      box-shadow: 0 16px 36px rgba(15, 23, 42, 0.2);
       overflow: hidden;
     }
 
@@ -252,8 +237,8 @@
       position: absolute;
       inset: 0;
       background-image:
-        linear-gradient(to right, rgba(148, 163, 184, 0.15) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(148, 163, 184, 0.12) 1px, transparent 1px);
+        linear-gradient(to right, rgba(148,163,184,0.16) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(148,163,184,0.12) 1px, transparent 1px);
       background-size: 32px 32px;
       opacity: 0.35;
       pointer-events: none;
@@ -263,20 +248,19 @@
       position: absolute;
       inset: 0;
       pointer-events: auto;
-      overflow: visible;
       z-index: 1;
     }
 
     .connector-path {
       fill: none;
-      stroke: rgba(15, 23, 42, 0.45);
+      stroke: rgba(15,23,42,0.5);
       stroke-width: 2;
       stroke-linecap: round;
       cursor: pointer;
       transition: stroke 0.12s ease, stroke-width 0.12s ease;
     }
 
-    .connector-path:hover {
+    .connector-path.selected {
       stroke: var(--accent);
       stroke-width: 3;
     }
@@ -292,14 +276,14 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      border: 1px solid rgba(148, 163, 184, 0.35);
+      border: 1px solid rgba(148,163,184,0.35);
       transition: box-shadow 0.12s ease, transform 0.08s ease, border-color 0.12s ease;
       z-index: 2;
     }
 
     .desk-card.selected {
       border-color: var(--accent);
-      box-shadow: 0 16px 40px rgba(59, 130, 246, 0.32);
+      box-shadow: 0 16px 40px rgba(59,130,246,0.32);
       transform: translateY(-1px);
     }
 
@@ -309,10 +293,8 @@
       align-items: center;
       justify-content: space-between;
       padding: 0 8px 0 10px;
-      background: linear-gradient(to right, rgba(15, 23, 42, 0.04), rgba(148, 163, 184, 0.04));
-      cursor: move;
-      user-select: none;
-      border-bottom: 1px solid rgba(148, 163, 184, 0.35);
+      background: linear-gradient(to right, rgba(15,23,42,0.04), rgba(148,163,184,0.04));
+      border-bottom: 1px solid rgba(148,163,184,0.35);
       position: relative;
       z-index: 3;
     }
@@ -332,12 +314,9 @@
       align-items: center;
       justify-content: center;
       font-size: 13px;
+      background: rgba(59,130,246,0.15);
+      color: #1d4ed8;
     }
-
-    .card-type-text { background: rgba(59, 130, 246, 0.15); color: #1d4ed8; }
-    .card-type-image { background: rgba(16, 185, 129, 0.15); color: #047857; }
-    .card-type-pdf { background: rgba(239, 68, 68, 0.16); color: #b91c1c; }
-    .card-type-web { background: rgba(234, 179, 8, 0.15); color: #92400e; }
 
     .card-title {
       font-size: 12px;
@@ -369,14 +348,13 @@
       transition: background 0.12s ease, color 0.12s ease, transform 0.08s ease;
     }
 
-    .icon-button:hover {
-      background: rgba(148, 163, 184, 0.25);
-      color: #111827;
-      transform: translateY(-0.5px);
+    .icon-button:active {
+      transform: scale(0.9);
+      background: rgba(148,163,184,0.3);
     }
 
-    .icon-button.danger:hover {
-      background: rgba(248, 113, 113, 0.16);
+    .icon-button.danger:active {
+      background: rgba(248,113,113,0.2);
       color: #b91c1c;
     }
 
@@ -396,42 +374,23 @@
       height: 100%;
       overflow: auto;
       border-radius: 12px;
+      background: #f9fafb;
+      padding: 4px;
     }
 
     .card-text-content {
       width: 100%;
       min-height: 80px;
-      padding: 6px 6px 10px 6px;
       font-size: 13px;
       line-height: 1.5;
       outline: none;
       border-radius: 10px;
-      border: 1px solid rgba(209, 213, 219, 0.8);
-      background: #f9fafb;
-    }
-
-    .card-text-content:focus {
+      border: 1px solid rgba(209,213,219,0.8);
+      padding: 6px 6px 10px 6px;
       background: #ffffff;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.25);
-    }
-
-    .card-embed, .card-iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-      display: block;
-      border-radius: 12px;
-      background: #111827;
-    }
-
-    .card-image {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      border-radius: 12px;
-      display: block;
-      background: #020617;
+      -webkit-user-select: text;
+      user-select: text;
+      touch-action: auto;
     }
 
     .resize-handle {
@@ -441,15 +400,14 @@
       right: 6px;
       bottom: 6px;
       border-radius: 4px;
-      background: rgba(15, 23, 42, 0.06);
-      border: 1px solid rgba(148, 163, 184, 0.9);
+      background: rgba(15,23,42,0.06);
+      border: 1px solid rgba(148,163,184,0.9);
       cursor: se-resize;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: 10px;
       color: #6b7280;
-      backdrop-filter: blur(4px);
       z-index: 4;
     }
 
@@ -457,8 +415,8 @@
       content: "";
       width: 8px;
       height: 8px;
-      border-right: 1px solid rgba(107, 114, 128, 0.9);
-      border-bottom: 1px solid rgba(107, 114, 128, 0.9);
+      border-right: 1px solid rgba(107,114,128,0.9);
+      border-bottom: 1px solid rgba(107,114,128,0.9);
       transform: translate(1px, 1px);
     }
 
@@ -471,13 +429,13 @@
       transform: translateY(-50%);
       border-radius: 999px;
       background: var(--accent-soft);
-      border: 1px solid rgba(59, 130, 246, 0.7);
+      border: 1px solid rgba(59,130,246,0.7);
       cursor: crosshair;
       display: flex;
       align-items: center;
       justify-content: center;
       z-index: 5;
-      box-shadow: 0 0 0 2px rgba(248, 250, 252, 0.9);
+      box-shadow: 0 0 0 2px rgba(248,250,252,0.9);
     }
 
     .connector-handle::before {
@@ -489,13 +447,10 @@
     }
 
     .desk-card.collapsed {
-      height: 46px !important;
+      height: 40px !important;
     }
-
     .desk-card.collapsed .card-body { display: none; }
     .desk-card.collapsed .resize-handle { display: none; }
-
-    input[type="file"] { display: none; }
 
     @media (max-width: 900px) {
       .sidebar { display: none; }
@@ -535,8 +490,10 @@
           </button>
         </div>
         <div class="sidebar-footer">
-          ➜ Le card si spostano, si ridimensionano e si collegano.<br>
-          ➜ Click sul pallino blu per creare connettori.
+          ➜ Trascina la barra per muovere le card.<br>
+          ➜ Trascina l’angolo in basso per ridimensionare.<br>
+          ➜ Tocca il pallino blu per creare connettori.<br>
+          ➜ Tocca una linea per eliminarla.
         </div>
       </aside>
 
@@ -549,17 +506,105 @@
 
   <script>
     (function() {
-      var canvas = document.getElementById('canvas');
-      var connectorLayer = document.getElementById('connector-layer');
-      var toolText = document.getElementById('tool-text');
-      var btnClear = document.getElementById('btn-clear');
+      const canvas = document.getElementById('canvas');
+      const connectorLayer = document.getElementById('connector-layer');
+      const toolText = document.getElementById('tool-text');
+      const btnClear = document.getElementById('btn-clear');
 
-      var zIndexCounter = 10;
-      var cardIdCounter = 0;
-      var currentSelectedCard = null;
+      let zIndexCounter = 10;
+      let cardIdCounter = 0;
+      let currentSelectedCard = null;
+      let connectors = [];
+      let connectorStartCard = null;
 
-      var connectors = [];
-      var connectorStartCard = null;
+      const hasPointer = window.PointerEvent !== undefined;
+
+      function addDrag(handle, onStart, onMove, onEnd) {
+        let active = false;
+        let lastX = 0;
+        let lastY = 0;
+
+        function start(x, y, rawEvent) {
+          active = true;
+          lastX = x;
+          lastY = y;
+          if (onStart) onStart(rawEvent);
+        }
+
+        function move(x, y, rawEvent) {
+          if (!active) return;
+          const dx = x - lastX;
+          const dy = y - lastY;
+          lastX = x;
+          lastY = y;
+          onMove(dx, dy, rawEvent);
+        }
+
+        function end(rawEvent) {
+          if (!active) return;
+          active = false;
+          if (onEnd) onEnd(rawEvent);
+        }
+
+        if (hasPointer) {
+          handle.addEventListener('pointerdown', (e) => {
+            if (e.button !== 0 && e.button !== undefined) return;
+            handle.setPointerCapture(e.pointerId);
+            start(e.clientX, e.clientY, e);
+            e.preventDefault();
+          });
+          handle.addEventListener('pointermove', (e) => {
+            if (!active) return;
+            move(e.clientX, e.clientY, e);
+          });
+          handle.addEventListener('pointerup', (e) => {
+            end(e);
+            handle.releasePointerCapture(e.pointerId);
+          });
+          handle.addEventListener('pointercancel', (e) => {
+            end(e);
+            try { handle.releasePointerCapture(e.pointerId); } catch (_) {}
+          });
+        } else {
+          // mouse
+          handle.addEventListener('mousedown', (e) => {
+            if (e.button !== 0) return;
+            start(e.clientX, e.clientY, e);
+            document.addEventListener('mousemove', mouseMove);
+            document.addEventListener('mouseup', mouseUp);
+            e.preventDefault();
+          });
+          function mouseMove(e) {
+            move(e.clientX, e.clientY, e);
+          }
+          function mouseUp(e) {
+            document.removeEventListener('mousemove', mouseMove);
+            document.removeEventListener('mouseup', mouseUp);
+            end(e);
+          }
+
+          // touch
+          handle.addEventListener('touchstart', (e) => {
+            const t = e.touches[0];
+            if (!t) return;
+            start(t.clientX, t.clientY, e);
+            document.addEventListener('touchmove', touchMove, { passive: false });
+            document.addEventListener('touchend', touchEnd);
+            e.preventDefault();
+          });
+          function touchMove(e) {
+            const t = e.touches[0];
+            if (!t) return;
+            move(t.clientX, t.clientY, e);
+            e.preventDefault();
+          }
+          function touchEnd(e) {
+            document.removeEventListener('touchmove', touchMove);
+            document.removeEventListener('touchend', touchEnd);
+            end(e);
+          }
+        }
+      }
 
       function bringToFront(card) {
         zIndexCounter++;
@@ -573,7 +618,7 @@
       }
 
       function toggleCollapse(card, btn) {
-        var isCollapsed = card.classList.contains('collapsed');
+        const isCollapsed = card.classList.contains('collapsed');
         if (isCollapsed) {
           card.classList.remove('collapsed');
           if (card.dataset.prevHeight) {
@@ -589,93 +634,13 @@
       }
 
       function centerCard(card) {
-        var rect = canvas.getBoundingClientRect();
-        var cardRect = card.getBoundingClientRect();
-        var left = rect.left + (rect.width - cardRect.width) / 2;
-        var top = rect.top + (rect.height - cardRect.height) / 2;
+        const rect = canvas.getBoundingClientRect();
+        const cardRect = card.getBoundingClientRect();
+        const left = rect.left + (rect.width - cardRect.width) / 2;
+        const top = rect.top + (rect.height - cardRect.height) / 2;
         card.style.left = (left - rect.left) + 'px';
         card.style.top = (top - rect.top) + 'px';
         updateConnectors();
-      }
-
-      function makeDraggable(card, handle) {
-        var isDragging = false;
-        var startX = 0;
-        var startY = 0;
-        var initialLeft = 0;
-        var initialTop = 0;
-
-        handle.addEventListener('mousedown', function(e) {
-          if (e.button !== 0) return;
-          isDragging = true;
-          bringToFront(card);
-          startX = e.clientX;
-          startY = e.clientY;
-          var rect = card.getBoundingClientRect();
-          var canvasRect = canvas.getBoundingClientRect();
-          initialLeft = rect.left - canvasRect.left;
-          initialTop = rect.top - canvasRect.top;
-          document.addEventListener('mousemove', onMouseMove);
-          document.addEventListener('mouseup', onMouseUp);
-          e.preventDefault();
-        });
-
-        function onMouseMove(e) {
-          if (!isDragging) return;
-          var dx = e.clientX - startX;
-          var dy = e.clientY - startY;
-          card.style.left = (initialLeft + dx) + 'px';
-          card.style.top = (initialTop + dy) + 'px';
-          updateConnectors();
-        }
-
-        function onMouseUp() {
-          if (!isDragging) return;
-          isDragging = false;
-          document.removeEventListener('mousemove', onMouseMove);
-          document.removeEventListener('mouseup', onMouseUp);
-        }
-      }
-
-      function makeResizable(card, handle) {
-        var isResizing = false;
-        var startX = 0;
-        var startY = 0;
-        var startWidth = 0;
-        var startHeight = 0;
-
-        handle.addEventListener('mousedown', function(e) {
-          if (e.button !== 0) return;
-          isResizing = true;
-          bringToFront(card);
-          startX = e.clientX;
-          startY = e.clientY;
-          var rect = card.getBoundingClientRect();
-          startWidth = rect.width;
-          startHeight = rect.height;
-          document.addEventListener('mousemove', onMouseMove);
-          document.addEventListener('mouseup', onMouseUp);
-          e.preventDefault();
-          e.stopPropagation();
-        });
-
-        function onMouseMove(e) {
-          if (!isResizing) return;
-          var dx = e.clientX - startX;
-          var dy = e.clientY - startY;
-          var newWidth = Math.max(220, startWidth + dx);
-          var newHeight = Math.max(140, startHeight + dy);
-          card.style.width = newWidth + 'px';
-          card.style.height = newHeight + 'px';
-          updateConnectors();
-        }
-
-        function onMouseUp() {
-          if (!isResizing) return;
-          isResizing = false;
-          document.removeEventListener('mousemove', onMouseMove);
-          document.removeEventListener('mouseup', onMouseUp);
-        }
       }
 
       function handleConnectorClick(card) {
@@ -691,30 +656,24 @@
       }
 
       function createConnector(fromCard, toCard) {
-        var fromId = fromCard.dataset.cardId;
-        var toId = toCard.dataset.cardId;
+        const fromId = fromCard.dataset.cardId;
+        const toId = toCard.dataset.cardId;
         if (!fromId || !toId || fromId === toId) return;
 
-        var already = false;
-        for (var i = 0; i < connectors.length; i++) {
-          if (connectors[i].fromId === fromId && connectors[i].toId === toId) {
-            already = true;
-            break;
-          }
-        }
-        if (already) return;
+        if (connectors.some(c => c.fromId === fromId && c.toId === toId)) return;
 
-        var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         path.setAttribute('class', 'connector-path');
-        var id = 'conn-' + Date.now() + '-' + Math.random().toString(36).slice(2);
-        path.setAttribute('data-connector-id', id);
+
+        const id = 'conn-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+        path.dataset.connectorId = id;
         connectorLayer.appendChild(path);
 
-        var conn = { id: id, fromId: fromId, toId: toId, pathEl: path };
+        const conn = { id, fromId, toId, pathEl: path };
         connectors.push(conn);
 
-        path.addEventListener('contextmenu', function(e) {
-          e.preventDefault();
+        // tap / click per eliminare
+        path.addEventListener('click', () => {
           removeConnectorById(id);
         });
 
@@ -722,24 +681,18 @@
       }
 
       function removeConnectorById(id) {
-        var remaining = [];
-        for (var i = 0; i < connectors.length; i++) {
-          var c = connectors[i];
-          if (c.id === id) {
-            if (c.pathEl && c.pathEl.parentNode) {
-              c.pathEl.parentNode.removeChild(c.pathEl);
-            }
-          } else {
-            remaining.push(c);
-          }
+        const idx = connectors.findIndex(c => c.id === id);
+        if (idx === -1) return;
+        const conn = connectors[idx];
+        if (conn.pathEl && conn.pathEl.parentNode) {
+          conn.pathEl.parentNode.removeChild(conn.pathEl);
         }
-        connectors = remaining;
+        connectors.splice(idx, 1);
       }
 
       function removeConnectorsForCard(cardId) {
-        var remaining = [];
-        for (var i = 0; i < connectors.length; i++) {
-          var c = connectors[i];
+        const remaining = [];
+        connectors.forEach(c => {
           if (c.fromId === cardId || c.toId === cardId) {
             if (c.pathEl && c.pathEl.parentNode) {
               c.pathEl.parentNode.removeChild(c.pathEl);
@@ -747,92 +700,89 @@
           } else {
             remaining.push(c);
           }
-        }
+        });
         connectors = remaining;
       }
 
       function updateConnectors() {
-        var canvasRect = canvas.getBoundingClientRect();
-        var toRemove = [];
+        const canvasRect = canvas.getBoundingClientRect();
+        const toRemove = [];
 
-        for (var i = 0; i < connectors.length; i++) {
-          var conn = connectors[i];
-          var fromCard = canvas.querySelector('.desk-card[data-card-id="' + conn.fromId + '"]');
-          var toCard = canvas.querySelector('.desk-card[data-card-id="' + conn.toId + '"]');
-
+        connectors.forEach(conn => {
+          const fromCard = canvas.querySelector('.desk-card[data-card-id="' + conn.fromId + '"]');
+          const toCard = canvas.querySelector('.desk-card[data-card-id="' + conn.toId + '"]');
           if (!fromCard || !toCard) {
             toRemove.push(conn.id);
-            continue;
+            return;
           }
 
-          var fromRect = fromCard.getBoundingClientRect();
-          var toRect = toCard.getBoundingClientRect();
+          const fromRect = fromCard.getBoundingClientRect();
+          const toRect = toCard.getBoundingClientRect();
 
-          var startX = fromRect.right - canvasRect.left;
-          var startY = fromRect.top + fromRect.height / 2 - canvasRect.top;
-          var endX = toRect.left - canvasRect.left;
-          var endY = toRect.top + toRect.height / 2 - canvasRect.top;
+          const startX = fromRect.right - canvasRect.left;
+          const startY = fromRect.top + fromRect.height / 2 - canvasRect.top;
+          const endX = toRect.left - canvasRect.left;
+          const endY = toRect.top + toRect.height / 2 - canvasRect.top;
 
-          var offset = Math.max(40, Math.abs(endX - startX) / 3);
+          const offset = Math.max(40, Math.abs(endX - startX) / 3);
 
-          var d = 'M ' + startX + ' ' + startY +
-                  ' C ' + (startX + offset) + ' ' + startY +
-                  ' ' + (endX - offset) + ' ' + endY +
-                  ' ' + endX + ' ' + endY;
+          const d = [
+            'M', startX, startY,
+            'C', startX + offset, startY,
+                 endX - offset, endY,
+                 endX, endY
+          ].join(' ');
 
           conn.pathEl.setAttribute('d', d);
-        }
+        });
 
-        for (var j = 0; j < toRemove.length; j++) {
-          removeConnectorById(toRemove[j]);
-        }
+        toRemove.forEach(removeConnectorById);
       }
 
       window.addEventListener('resize', updateConnectors);
 
       function createCardBase(type, title) {
-        var card = document.createElement('div');
+        const card = document.createElement('div');
         card.className = 'desk-card';
         card.dataset.cardId = String(++cardIdCounter);
         card.dataset.type = type;
         card.style.left = (40 + Math.random() * 80) + 'px';
         card.style.top = (40 + Math.random() * 80) + 'px';
         card.style.width = '320px';
-        card.style.height = type === 'text' ? '200px' : '260px';
+        card.style.height = '200px';
         card.style.zIndex = zIndexCounter;
 
-        var header = document.createElement('div');
+        const header = document.createElement('div');
         header.className = 'card-header';
 
-        var headerLeft = document.createElement('div');
+        const headerLeft = document.createElement('div');
         headerLeft.className = 'card-header-left';
 
-        var icon = document.createElement('div');
+        const icon = document.createElement('div');
         icon.className = 'card-type-icon';
-        if (type === 'text') icon.classList.add('card-type-text');
-        icon.textContent = type === 'text' ? 'T' : '?';
+        icon.textContent = 'T';
 
-        var titleEl = document.createElement('div');
+        const titleEl = document.createElement('div');
         titleEl.className = 'card-title';
         titleEl.textContent = title || 'Nota';
 
         headerLeft.appendChild(icon);
         headerLeft.appendChild(titleEl);
 
-        var headerActions = document.createElement('div');
+        const headerActions = document.createElement('div');
         headerActions.className = 'card-header-actions';
 
-        var toggleButton = document.createElement('button');
+        const toggleButton = document.createElement('button');
         toggleButton.className = 'icon-button';
         toggleButton.title = 'Apri/chiudi contenuto';
         toggleButton.innerHTML = '▾';
 
-        var centerButton = document.createElement('button');
+        const centerButton = document.createElement('button');
         centerButton.className = 'icon-button';
         centerButton.title = 'Centra nel desk';
         centerButton.innerHTML = '●';
 
-        var closeButton = document.createElement('button');
+        const closeButton = document.createElement('button');
         closeButton.className = 'icon-button danger';
         closeButton.title = 'Elimina';
         closeButton.innerHTML = '✕';
@@ -844,17 +794,17 @@
         header.appendChild(headerLeft);
         header.appendChild(headerActions);
 
-        var body = document.createElement('div');
+        const body = document.createElement('div');
         body.className = 'card-body';
 
-        var bodyInner = document.createElement('div');
+        const bodyInner = document.createElement('div');
         bodyInner.className = 'card-body-inner';
         body.appendChild(bodyInner);
 
-        var resize = document.createElement('div');
+        const resize = document.createElement('div');
         resize.className = 'resize-handle';
 
-        var connectorHandle = document.createElement('div');
+        const connectorHandle = document.createElement('div');
         connectorHandle.className = 'connector-handle';
 
         card.appendChild(header);
@@ -864,82 +814,112 @@
 
         canvas.appendChild(card);
 
-        makeDraggable(card, header);
-        makeResizable(card, resize);
+        // drag card
+        addDrag(
+          header,
+          () => {
+            bringToFront(card);
+          },
+          (dx, dy) => {
+            const rect = card.getBoundingClientRect();
+            const canvasRect = canvas.getBoundingClientRect();
+            const left = rect.left - canvasRect.left + dx;
+            const top = rect.top - canvasRect.top + dy;
+            card.style.left = left + 'px';
+            card.style.top = top + 'px';
+            updateConnectors();
+          }
+        );
 
-        card.addEventListener('mousedown', function() {
-          bringToFront(card);
-        });
+        // resize
+        addDrag(
+          resize,
+          () => {
+            bringToFront(card);
+          },
+          (dx, dy) => {
+            const rect = card.getBoundingClientRect();
+            const newWidth = Math.max(220, rect.width + dx);
+            const newHeight = Math.max(140, rect.height + dy);
+            card.style.width = newWidth + 'px';
+            card.style.height = newHeight + 'px';
+            updateConnectors();
+          }
+        );
 
-        toggleButton.addEventListener('click', function(e) {
+        // selezione card
+        card.addEventListener('pointerdown', () => bringToFront(card));
+        card.addEventListener('mousedown', () => bringToFront(card)); // fallback
+
+        // toggle open/close
+        toggleButton.addEventListener('click', (e) => {
           e.stopPropagation();
           toggleCollapse(card, toggleButton);
         });
 
-        header.addEventListener('dblclick', function(e) {
+        header.addEventListener('dblclick', (e) => {
           e.stopPropagation();
           toggleCollapse(card, toggleButton);
         });
 
-        centerButton.addEventListener('click', function(e) {
+        // center
+        centerButton.addEventListener('click', (e) => {
           e.stopPropagation();
           centerCard(card);
         });
 
-        closeButton.addEventListener('click', function(e) {
+        // close
+        closeButton.addEventListener('click', (e) => {
           e.stopPropagation();
-          var id = card.dataset.cardId;
+          const id = card.dataset.cardId;
           removeConnectorsForCard(id);
           card.remove();
           if (currentSelectedCard === card) currentSelectedCard = null;
           updateConnectors();
         });
 
-        connectorHandle.addEventListener('click', function(e) {
+        // connector handle
+        connectorHandle.addEventListener('click', (e) => {
           e.stopPropagation();
           handleConnectorClick(card);
         });
 
-        return { card: card, bodyInner: bodyInner };
+        return { card, bodyInner };
       }
 
       function createTextCard(initialText) {
-        var base = createCardBase('text', 'Nota');
-        var card = base.card;
-        var bodyInner = base.bodyInner;
-        var textarea = document.createElement('div');
-        textarea.className = 'card-text-content';
-        textarea.contentEditable = 'true';
-        textarea.innerHTML = initialText || '';
-        bodyInner.appendChild(textarea);
+        const { card, bodyInner } = createCardBase('text', 'Nota');
+        const text = document.createElement('div');
+        text.className = 'card-text-content';
+        text.contentEditable = 'true';
+        text.innerHTML = initialText || '';
+        bodyInner.appendChild(text);
         bringToFront(card);
         updateConnectors();
         return card;
       }
 
-      toolText.addEventListener('click', function() {
+      toolText.addEventListener('click', () => {
         createTextCard('Scrivi qui la tua nota…');
       });
 
-      btnClear.addEventListener('click', function() {
-        var cards = canvas.querySelectorAll('.desk-card');
-        for (var i = 0; i < cards.length; i++) {
-          cards[i].remove();
-        }
-        for (var j = 0; j < connectors.length; j++) {
-          var c = connectors[j];
+      btnClear.addEventListener('click', () => {
+        const cards = canvas.querySelectorAll('.desk-card');
+        cards.forEach(c => c.remove());
+        connectors.forEach(c => {
           if (c.pathEl && c.pathEl.parentNode) {
             c.pathEl.parentNode.removeChild(c.pathEl);
           }
-        }
+        });
         connectors = [];
         currentSelectedCard = null;
         connectorStartCard = null;
       });
 
-      // crea una nota di esempio all'avvio
-      window.addEventListener('load', function() {
-        createTextCard('Questa card si sposta, si ridimensiona e può essere collegata ad altre.');
+      // card di esempio
+      window.addEventListener('load', () => {
+        createTextCard('Card di prova: sposta, ridimensiona, apri/chiudi, collega.');
+        createTextCard('Seconda card: prova i connettori tra questa e l’altra.');
       });
     })();
   </script>
