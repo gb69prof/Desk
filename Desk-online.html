@@ -3,364 +3,287 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Interactive Desk — GitHub Pages</title>
-
-  <!-- PDF.js (CDN)
-       NOTE: usa la build "legacy" per avere la variabile globale window.pdfjsLib.
-       La build moderna (ESM) spesso NON espone pdfjsLib come globale e su Safari può risultare undefined.
-  -->
-  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.7.76/legacy/build/pdf.min.js"></script>
-
+  <title>Interactive Desk – GitHub Pages</title>
   <style>
     :root{
-      --bg1:#0b1220;
-      --bg2:#111b31;
-      --panel: rgba(255,255,255,.08);
-      --stroke: rgba(255,255,255,.14);
-      --text: rgba(255,255,255,.92);
-      --muted: rgba(255,255,255,.64);
-      --shadow: 0 12px 40px rgba(0,0,0,.45);
-      --radius2: 22px;
-      --accent: #6ae4ff;
-      --danger: #ff5d6a;
+      --bg1:#070b17;
+      --bg2:#101727;
+      --panel:rgba(255,255,255,.06);
+      --stroke:rgba(255,255,255,.14);
+      --text:rgba(255,255,255,.95);
+      --muted:rgba(255,255,255,.65);
+      --accent:#6ae4ff;
+      --danger:#ff5d6a;
+      --shadow:0 16px 50px rgba(0,0,0,.55);
+      --radius:22px;
     }
-
-    *{ box-sizing:border-box; }
-    html,body{ height:100%; margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; color:var(--text);
+    *{box-sizing:border-box;margin:0;padding:0;}
+    html,body{height:100%;}
+    body{
+      font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
       background:
-        radial-gradient(1200px 800px at 15% 10%, #1b2a58 0%, transparent 55%),
-        radial-gradient(900px 650px at 75% 0%, #1a3b3b 0%, transparent 55%),
-        linear-gradient(160deg, var(--bg1), var(--bg2));
+        radial-gradient(1200px 800px at 10% 0%,#1b2a58 0,transparent 55%),
+        radial-gradient(900px 650px at 90% 0%,#1a3b3b 0,transparent 55%),
+        linear-gradient(160deg,var(--bg1),var(--bg2));
+      color:var(--text);
       overflow:hidden;
     }
-
     .app{
       height:100%;
       display:grid;
-      grid-template-columns: 370px 1fr;
+      grid-template-columns:360px 1fr;
       gap:14px;
       padding:14px;
-      padding-bottom: max(14px, env(safe-area-inset-bottom));
     }
-    @media (max-width: 900px){
-      .app{ grid-template-columns:1fr; grid-template-rows: auto 1fr; }
-      .left{ max-height: 48vh; }
+    @media (max-width:900px){
+      .app{
+        grid-template-columns:1fr;
+        grid-template-rows:auto 1fr;
+      }
+      .left{max-height:48vh;}
     }
-
-    .left, .main{
+    .left,.main{
       border:1px solid var(--stroke);
-      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.05));
-      border-radius: var(--radius2);
-      box-shadow: var(--shadow);
-      overflow:hidden;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      border-radius:var(--radius);
+      background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.04));
+      box-shadow:var(--shadow);
+      backdrop-filter:blur(12px);
+      -webkit-backdrop-filter:blur(12px);
       display:flex;
       flex-direction:column;
-      min-height: 0;
+      min-height:0;
     }
-
     .topbar{
       display:flex;
       align-items:center;
       justify-content:space-between;
-      gap:10px;
-      padding:12px;
-      border-bottom:1px solid var(--stroke);
-      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
-      flex:0 0 auto;
-    }
-
-    .brand{ display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:.2px; white-space:nowrap; }
-    .dot{ width:12px;height:12px;border-radius:999px; background: radial-gradient(circle at 30% 30%, #fff, var(--accent));
-      box-shadow: 0 0 0 4px rgba(106,228,255,.15), 0 0 24px rgba(106,228,255,.28);
-    }
-    .sub{ font-size:12px; color:var(--muted); font-weight:600; }
-
-    .chip{
-      display:inline-flex; align-items:center; gap:8px;
-      padding:8px 10px;
-      border:1px solid var(--stroke);
-      background: rgba(255,255,255,.05);
-      border-radius:999px;
-      font-size:12px;
-      font-weight:700;
-      color:var(--muted);
-      user-select:none;
-    }
-    .chip strong{ color:var(--text); }
-
-    .btn{
-      appearance:none; border:1px solid var(--stroke);
-      background: rgba(255,255,255,.06);
-      color:var(--text);
-      padding:10px 10px;
-      border-radius: 14px;
-      font-weight:750;
-      font-size:13px;
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      cursor:pointer;
-      user-select:none;
-      touch-action: manipulation;
-      transition: transform .06s ease, background .2s ease, border-color .2s ease;
-    }
-    .btn:active{ transform: translateY(1px) scale(.99); }
-    .btn:hover{ background: rgba(255,255,255,.10); border-color: rgba(255,255,255,.22); }
-    .btn.small{ padding:8px 10px; font-size:12px; border-radius: 12px; }
-    .btn.primary{ border-color: rgba(106,228,255,.35); background: rgba(106,228,255,.14); }
-    .btn.primary:hover{ background: rgba(106,228,255,.20); }
-    .btn.danger{ border-color: rgba(255,93,106,.35); background: rgba(255,93,106,.12); }
-    .btn.danger:hover{ background: rgba(255,93,106,.18); }
-
-    .section{ padding:12px; border-bottom:1px solid var(--stroke); flex:0 0 auto; }
-    .section h3{ margin:0 0 10px 0; font-size:13px; letter-spacing:.2px; color: rgba(255,255,255,.84); }
-
-    .row{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-    .row + .row{ margin-top:8px; }
-
-    .input{
-      flex:1;
-      min-width: 160px;
       padding:10px 12px;
-      border-radius: 14px;
-      border:1px solid var(--stroke);
-      background: rgba(0,0,0,.18);
-      color: var(--text);
-      outline:none;
-      font-size:13px;
+      border-bottom:1px solid var(--stroke);
+      background:linear-gradient(180deg,rgba(0,0,0,.34),rgba(0,0,0,.18));
+      flex-shrink:0;
     }
-    .input::placeholder{ color: rgba(255,255,255,.38); }
-
-    .note{ font-size:12px; color: rgba(255,255,255,.58); line-height:1.35; }
-
-    /* Sources list */
-    .sources{ padding:12px; overflow:auto; flex:1 1 auto; min-height: 0; }
+    .brand{display:flex;align-items:center;gap:8px;font-weight:800;letter-spacing:.2px;}
+    .dot{
+      width:11px;height:11px;border-radius:99px;
+      background:radial-gradient(circle at 30% 30%,#fff,var(--accent));
+      box-shadow:0 0 0 4px rgba(106,228,255,.18),0 0 24px rgba(106,228,255,.34);
+    }
+    .sub{font-size:11px;color:var(--muted);font-weight:600;}
+    .chip{
+      display:inline-flex;align-items:center;gap:6px;
+      padding:6px 10px;border-radius:999px;
+      border:1px solid var(--stroke);
+      background:rgba(255,255,255,.06);
+      font-size:11px;font-weight:700;
+      color:var(--muted);
+      white-space:nowrap;
+    }
+    .chip strong{color:var(--text);}
+    .section{
+      padding:10px 12px;
+      border-bottom:1px solid var(--stroke);
+      flex-shrink:0;
+    }
+    .section h3{font-size:12px;margin-bottom:6px;letter-spacing:.15px;text-transform:uppercase;color:rgba(255,255,255,.82);}
+    .row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:4px;}
+    .input{
+      flex:1;min-width:150px;
+      padding:8px 10px;
+      border-radius:13px;
+      border:1px solid var(--stroke);
+      background:rgba(0,0,0,.28);
+      color:var(--text);
+      font-size:12px;
+      outline:none;
+    }
+    .input::placeholder{color:rgba(255,255,255,.4);}
+    .btn{
+      appearance:none;border:1px solid var(--stroke);
+      background:rgba(255,255,255,.06);
+      color:var(--text);
+      border-radius:13px;
+      padding:7px 10px;
+      font-size:11px;font-weight:750;
+      display:inline-flex;align-items:center;gap:6px;
+      cursor:pointer;
+      transition:background .15s,border-color .15s,transform .05s;
+      user-select:none;
+    }
+    .btn.small{font-size:11px;padding:6px 9px;}
+    .btn.primary{border-color:rgba(106,228,255,.5);background:rgba(106,228,255,.18);}
+    .btn.danger{border-color:rgba(255,93,106,.55);background:rgba(255,93,106,.16);}
+    .btn:hover{background:rgba(255,255,255,.16);}
+    .btn:active{transform:translateY(1px) scale(.99);}
+    .sources{flex:1 1 auto;min-height:0;overflow:auto;padding:10px 12px 12px 12px;}
     .sourceItem{
       border:1px solid var(--stroke);
-      background: rgba(255,255,255,.06);
-      border-radius: 16px;
-      padding:10px;
+      background:rgba(0,0,0,.35);
+      border-radius:16px;
+      padding:8px;
       display:grid;
-      grid-template-columns: 54px 1fr;
-      gap:10px;
-      margin-bottom:10px;
+      grid-template-columns:52px 1fr;
+      gap:8px;
+      margin-bottom:8px;
     }
     .thumb{
-      width:54px; height:54px;
-      border-radius: 14px;
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(0,0,0,.18);
-      overflow:hidden;
-      display:flex; align-items:center; justify-content:center;
-      color: rgba(255,255,255,.55);
-      font-weight:900;
-      font-size:12px;
+      width:52px;height:52px;border-radius:14px;
+      border:1px solid rgba(255,255,255,.18);
+      background:rgba(0,0,0,.4);
+      overflow:hidden;display:flex;align-items:center;justify-content:center;
+      font-size:11px;font-weight:800;color:rgba(255,255,255,.7);
     }
-    .thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
-    .meta{ display:flex; flex-direction:column; gap:8px; min-width:0; }
-    .meta .title{ font-size:13px; font-weight:850; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .meta .type{ font-size:12px; color: var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .meta .actions{ display:flex; gap:8px; flex-wrap:wrap; }
+    .thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+    .meta{display:flex;flex-direction:column;gap:4px;min-width:0;}
+    .meta .title{font-size:12px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .meta .type{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .meta .actions{display:flex;flex-wrap:wrap;gap:6px;}
+    .note{font-size:11px;color:var(--muted);line-height:1.35;}
 
-    /* Main / desk */
-    .main{ display:flex; flex-direction:column; min-height:0; }
-
-    .mode{
-      display:flex; gap:6px; align-items:center;
-      padding:6px; border:1px solid var(--stroke);
-      border-radius: 14px; background: rgba(255,255,255,.05);
-      flex-wrap:wrap;
-    }
-    .mode .btn{ border-radius: 12px; padding:8px 10px; }
-    .mode .btn.active{ border-color: rgba(106,228,255,.5); background: rgba(106,228,255,.18); }
-
-    .toolbar{
-      display:flex; flex-wrap:wrap; gap:8px;
-      padding:10px 12px;
+    .main{display:flex;flex-direction:column;min-height:0;}
+    .toolbarTop{
+      display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;
+      padding:8px 10px;
       border-bottom:1px solid var(--stroke);
-      background: rgba(0,0,0,.12);
-      flex:0 0 auto;
+      background:linear-gradient(180deg,rgba(0,0,0,.35),rgba(0,0,0,.2));
+      flex-shrink:0;
     }
+    .modeGroup{display:flex;flex-wrap:wrap;gap:6px;align-items:center;}
+    .btn.toggle{background:rgba(255,255,255,.03);}
+    .btn.toggle.active{border-color:rgba(106,228,255,.7);background:rgba(106,228,255,.2);}
 
-    .mainBody{ flex:1 1 auto; position:relative; overflow:hidden; min-height:0;
+    .toolbarHint{
+      display:flex;flex-wrap:wrap;gap:6px;align-items:center;
+      padding:6px 10px;
+      border-bottom:1px solid var(--stroke);
+      background:rgba(0,0,0,.24);
+      flex-shrink:0;
+    }
+    .mainBody{flex:1 1 auto;min-height:0;position:relative;overflow:hidden;
       background:
-        radial-gradient(circle at 40% 20%, rgba(106,228,255,.10), transparent 40%),
-        radial-gradient(circle at 80% 60%, rgba(108,255,177,.08), transparent 45%),
-        linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+        radial-gradient(circle at 20% 20%,rgba(106,228,255,.12),transparent 50%),
+        radial-gradient(circle at 80% 70%,rgba(174,255,186,.12),transparent 52%),
+        linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.02));
     }
-
-    .deskViewport{ position:absolute; inset:0; overflow:hidden; touch-action:none; }
-    .deskContent{ position:absolute; left:0; top:0; transform-origin:0 0; will-change: transform; }
-
+    .deskViewport{position:absolute;inset:0;overflow:hidden;touch-action:none;}
+    .deskContent{position:absolute;left:0;top:0;transform-origin:0 0;}
     .gridLayer{
-      position:absolute; left:0; top:0;
-      width:8000px; height:8000px;
+      position:absolute;left:0;top:0;width:8000px;height:8000px;
       background-image:
-        linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(255,255,255,.06) 1px, transparent 1px);
-      background-size: 80px 80px;
+        linear-gradient(to right,rgba(255,255,255,.06) 1px,transparent 1px),
+        linear-gradient(to bottom,rgba(255,255,255,.06) 1px,transparent 1px);
+      background-size:80px 80px;
       opacity:.25;
       pointer-events:none;
     }
-    .gridLayer:after{
-      content:""; position:absolute; inset:0;
+    .gridLayer::after{
+      content:"";position:absolute;inset:0;
       background-image:
-        linear-gradient(to right, rgba(255,255,255,.08) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(255,255,255,.08) 1px, transparent 1px);
-      background-size: 16px 16px;
+        linear-gradient(to right,rgba(255,255,255,.08) 1px,transparent 1px),
+        linear-gradient(to bottom,rgba(255,255,255,.08) 1px,transparent 1px);
+      background-size:16px 16px;
       opacity:.22;
       pointer-events:none;
     }
-
-    .svgLayer{ position:absolute; left:0; top:0; width:8000px; height:8000px; pointer-events:none; }
+    .svgLayer{position:absolute;left:0;top:0;width:8000px;height:8000px;pointer-events:none;}
 
     .card{
       position:absolute;
-      border:1px solid rgba(255,255,255,.18);
-      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
-      border-radius: 18px;
-      box-shadow: 0 14px 40px rgba(0,0,0,.45);
+      border-radius:18px;
+      border:1px solid rgba(255,255,255,.22);
+      background:linear-gradient(180deg,rgba(0,0,0,.6),rgba(0,0,0,.38));
+      box-shadow:0 18px 60px rgba(0,0,0,.7);
+      min-width:180px;min-height:120px;
       overflow:hidden;
-      min-width: 180px;
-      min-height: 120px;
       touch-action:none;
       user-select:none;
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
     }
-    .card.selected{ border-color: rgba(106,228,255,.55); box-shadow: 0 18px 55px rgba(0,0,0,.55), 0 0 0 3px rgba(106,228,255,.12); }
-
+    .card.selected{border-color:rgba(106,228,255,.8);box-shadow:0 22px 70px rgba(0,0,0,.85),0 0 0 3px rgba(106,228,255,.24);}
     .cardHeader{
-      height:38px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:8px;
-      padding:8px 10px;
-      border-bottom:1px solid rgba(255,255,255,.14);
-      background: rgba(0,0,0,.14);
+      height:34px;display:flex;align-items:center;justify-content:space-between;gap:6px;
+      padding:6px 8px;
+      border-bottom:1px solid rgba(255,255,255,.24);
+      background:linear-gradient(90deg,rgba(0,0,0,.72),rgba(0,0,0,.5));
       cursor:grab;
     }
-    .cardHeader:active{ cursor:grabbing; }
-
-    .badge{
-      font-size:11px; font-weight:900; letter-spacing:.5px;
-      color: rgba(255,255,255,.78);
-      background: rgba(255,255,255,.10);
-      border:1px solid rgba(255,255,255,.12);
-      padding:4px 8px;
-      border-radius:999px;
-      text-transform:uppercase;
-    }
-    .cardTitle{ font-weight:900; font-size:12.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width: 240px; }
-
-    .cardBtns{ display:flex; gap:6px; }
+    .cardHeader:active{cursor:grabbing;}
+    .badge{font-size:10px;font-weight:800;padding:3px 6px;border-radius:999px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.12);}
+    .cardTitle{font-size:11px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px;}
+    .cardBtns{display:flex;gap:4px;}
     .iconBtn{
-      width:30px; height:30px;
-      display:flex; align-items:center; justify-content:center;
-      border-radius: 10px;
-      border:1px solid rgba(255,255,255,.14);
-      background: rgba(255,255,255,.06);
-      cursor:pointer;
+      width:24px;height:24px;border-radius:8px;
+      border:1px solid rgba(255,255,255,.22);
+      background:rgba(255,255,255,.10);
+      display:flex;align-items:center;justify-content:center;
+      font-size:12px;cursor:pointer;
     }
-    .iconBtn:hover{ background: rgba(255,255,255,.10); }
-    .iconBtn.danger:hover{ background: rgba(255,93,106,.15); border-color: rgba(255,93,106,.22); }
-
-    .cardBody{ height: calc(100% - 38px); padding:10px; overflow:hidden; pointer-events:none; }
+    .iconBtn.danger{background:rgba(255,93,106,.18);border-color:rgba(255,93,106,.5);}
+    .iconBtn:hover{background:rgba(255,255,255,.2);}
+    .iconBtn.danger:hover{background:rgba(255,93,106,.28);}
+    .cardBody{height:calc(100% - 34px);padding:8px;overflow:hidden;}
     .preview{
-      width:100%; height:100%;
-      border-radius: 14px;
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(0,0,0,.16);
+      width:100%;height:100%;border-radius:14px;border:1px solid rgba(255,255,255,.18);
+      background:rgba(0,0,0,.55);
+      display:flex;align-items:center;justify-content:center;
+      color:rgba(255,255,255,.75);
+      font-size:11px;text-align:center;line-height:1.3;
       overflow:hidden;
-      display:flex; align-items:center; justify-content:center;
-      color: rgba(255,255,255,.60);
-      font-size:12px;
-      text-align:center;
-      line-height:1.3;
     }
-    .preview img{ width:100%; height:100%; object-fit:cover; display:block; }
-    .preview .snippet{
-      padding:10px; text-align:left; white-space:pre-wrap; overflow:hidden;
-      display:-webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical;
-      color: rgba(255,255,255,.78);
-    }
-
+    .preview img{width:100%;height:100%;object-fit:cover;display:block;}
+    .preview .snippet{padding:8px 9px;text-align:left;white-space:pre-wrap;overflow:hidden;display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;font-size:11px;}
     .resizeHandle{
-      position:absolute; right:8px; bottom:8px;
-      width:16px; height:16px;
-      border-radius: 6px;
-      border:1px solid rgba(255,255,255,.18);
-      background: rgba(255,255,255,.12);
+      position:absolute;right:7px;bottom:7px;width:14px;height:14px;border-radius:6px;
+      border:1px solid rgba(255,255,255,.35);
+      background:rgba(255,255,255,.3);
       cursor:nwse-resize;
-      touch-action:none;
     }
-
-    .conn{ pointer-events: stroke; cursor:pointer; }
-
-    /* Modal viewer */
-    .modal{ position:fixed; inset:0; background: rgba(0,0,0,.62); display:none; align-items:center; justify-content:center; padding:14px; z-index:9999; }
-    .modal.open{ display:flex; }
-    .modalBox{
-      width: min(1100px, 100%);
-      height: min(760px, 100%);
-      border-radius: 22px;
-      border:1px solid rgba(255,255,255,.18);
-      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
-      box-shadow: var(--shadow);
-      overflow:hidden;
-      display:flex;
-      flex-direction:column;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-    }
-    .modalTop{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; border-bottom:1px solid rgba(255,255,255,.14); background: rgba(0,0,0,.16); }
-    .modalTop .title{ font-weight:950; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .modalBody{ flex:1; background: rgba(0,0,0,.14); overflow:auto; padding:12px; }
-    .viewer{ width:100%; min-height:100%; border-radius: 18px; border:1px solid rgba(255,255,255,.14); background: rgba(0,0,0,.18); overflow:hidden; }
-    .viewer iframe, .viewer video{ width:100%; height: 620px; border:0; display:block; background:#000; }
-    .viewer img{ width:100%; height:auto; display:block; }
-    .viewer .text{ padding:14px; white-space:pre-wrap; color: rgba(255,255,255,.88); line-height:1.45; font-size:15px; }
-
-    .pdfWrap{ padding:12px; }
-    .pdfPage{ margin: 10px auto 16px auto; display:block; border-radius: 14px; overflow:hidden; border:1px solid rgba(255,255,255,.14); background: rgba(0,0,0,.15); max-width: 980px; }
-    .pdfPage canvas{ width:100%; height:auto; display:block; }
+    .conn{pointer-events:stroke;cursor:pointer;}
 
     .toast{
-      position:absolute; bottom:14px; left:14px;
-      padding:10px 12px; border-radius: 14px;
-      background: rgba(0,0,0,.42);
-      border:1px solid rgba(255,255,255,.16);
-      color: rgba(255,255,255,.85);
-      font-size:12px;
-      display:none;
-      max-width: 520px;
-      z-index: 40;
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
+      position:absolute;left:10px;bottom:10px;z-index:50;
+      padding:8px 10px;border-radius:13px;
+      background:rgba(0,0,0,.7);
+      border:1px solid rgba(255,255,255,.2);
+      font-size:11px;color:rgba(255,255,255,.9);
+      max-width:360px;display:none;
+      backdrop-filter:blur(10px);
     }
-    .toast.show{ display:block; }
+    .toast.show{display:block;}
 
-    input[type="file"]{ display:none; }
+    .modal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;padding:14px;z-index:100;}
+    .modal.open{display:flex;}
+    .modalBox{
+      width:min(1100px,100%);
+      height:min(760px,100%);
+      border-radius:22px;
+      border:1px solid rgba(255,255,255,.22);
+      background:linear-gradient(180deg,rgba(0,0,0,.75),rgba(0,0,0,.55));
+      box-shadow:var(--shadow);
+      display:flex;flex-direction:column;overflow:hidden;
+    }
+    .modalTop{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.25);background:rgba(0,0,0,.65);}
+    .modalTop .title{font-size:13px;font-weight:850;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .modalBody{flex:1 1 auto;min-height:0;overflow:auto;padding:10px;background:rgba(0,0,0,.55);}
+    .viewer{border-radius:18px;border:1px solid rgba(255,255,255,.22);overflow:hidden;background:rgba(0,0,0,.8);}
+    .viewer iframe,.viewer video{width:100%;height:620px;border:0;display:block;}
+    .viewer img{width:100%;height:auto;display:block;}
+    .viewer .text{padding:12px 14px;font-size:14px;line-height:1.5;white-space:pre-wrap;}
+
+    .pdfEmbed{width:100%;height:620px;border:0;display:block;background:#000;}
+    input[type="file"]{display:none;}
   </style>
 </head>
-
 <body>
   <div class="app">
     <aside class="left">
       <div class="topbar">
         <div>
           <div class="brand"><span class="dot"></span>Interactive Desk</div>
-          <div class="sub">Static — GitHub Pages ready</div>
+          <div class="sub">GitHub Pages · static</div>
         </div>
-        <div class="chip"><strong id="counts">0</strong> card</div>
+        <div class="chip">Card: <strong id="cardCount">0</strong></div>
       </div>
-
-      <!-- CREA CARD (direttamente) + DEPOSITO -->
       <div class="section">
-        <h3>Crea card (subito sul desk)</h3>
+        <h3>Aggiungi contenuti (creano SUBITO una card)</h3>
         <div class="row">
           <label class="btn small primary" for="imgFile">+ Immagine</label>
           <input id="imgFile" type="file" accept="image/*" />
@@ -372,18 +295,17 @@
           <button class="btn small primary" id="addWebBtn">+ Web</button>
         </div>
         <div class="row">
-          <input id="videoUrl" class="input" placeholder="URL video (mp4 o YouTube)" />
+          <input id="videoUrl" class="input" placeholder="URL video (YouTube o mp4)" />
           <button class="btn small primary" id="addVideoBtn">+ Video</button>
         </div>
         <div class="row">
-          <input id="textTitle" class="input" placeholder="Titolo testo (opzionale)" />
+          <input id="textTitle" class="input" placeholder="Titolo testo" />
           <button class="btn small primary" id="addTextBtn">+ Testo</button>
         </div>
-        <div class="row"><div class="note">Suggerimento: dopo "Posiziona" tocca un punto vuoto del desk per piazzare la card lì.</div></div>
+        <div class="row"><div class="note">Ogni volta che aggiungi una fonte: appare una card sul desk e la fonte entra nel deposito qui sotto.</div></div>
       </div>
-
       <div class="section">
-        <h3>Azioni</h3>
+        <h3>Desk & salvataggio</h3>
         <div class="row">
           <button class="btn small" id="exportBtn">Esporta JSON</button>
           <label class="btn small" for="importFile">Importa JSON</label>
@@ -394,38 +316,37 @@
           <button class="btn small danger" id="clearSourcesBtn">Svuota fonti</button>
         </div>
       </div>
-
-      <div class="sources" id="sourcesList" aria-label="Fonti"></div>
+      <div class="section">
+        <h3>Deposito fonti</h3>
+        <div class="note">Da qui puoi creare altre card o cancellare la fonte. All'avvio è SEMPRE vuoto.</div>
+      </div>
+      <div class="sources" id="sourcesList"></div>
     </aside>
 
     <main class="main">
-      <div class="topbar">
-        <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center;">
-          <div class="mode" aria-label="Modalità">
-            <button class="btn small active" id="modeSelect">Muovi</button>
-            <button class="btn small" id="modePan">Pan</button>
-            <button class="btn small" id="modeConnect">Connetti</button>
-            <button class="btn small" id="modeDelete">Cancella</button>
-          </div>
-          <span class="chip">Zoom: <strong id="zoomPct">100%</strong></span>
-          <span class="chip" id="placeChip" style="display:none;">Posizionamento: <strong id="placeLabel">—</strong></span>
+      <div class="toolbarTop">
+        <div class="modeGroup">
+          <span class="chip">Modalità</span>
+          <button class="btn small toggle active" id="modeMove">Muovi</button>
+          <button class="btn small toggle" id="modePan">Pan</button>
+          <button class="btn small toggle" id="modeConnect">Connetti</button>
+          <button class="btn small toggle" id="modeDelete">Cancella</button>
         </div>
-
-        <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center;">
-          <span class="chip">Connettori: <input id="connColor" type="color" value="#6ae4ff" style="width:44px;height:34px;border:0;background:transparent;"></span>
-          <button class="btn small danger" id="delAllConn">Cancella connettori</button>
-          <button class="btn small" id="resetView">Reset vista</button>
+        <div class="modeGroup">
+          <span class="chip">Zoom: <strong id="zoomLabel">100%</strong></span>
+          <span class="chip">Connettori
+            <input id="connColor" type="color" value="#6ae4ff" style="width:40px;height:24px;border:none;background:transparent;">
+          </span>
+          <button class="btn small" id="resetViewBtn">Reset vista</button>
+          <button class="btn small danger" id="clearConnBtn">Cancella connettori</button>
         </div>
       </div>
-
-      <div class="toolbar">
-        <span class="chip">Tap su card: <strong>apri</strong></span>
-        <span class="chip">Header: <strong>sposta</strong></span>
-        <span class="chip">Angolo: <strong>ridimensiona</strong></span>
-        <span class="chip">Connetti: <strong>tocca 2 card</strong></span>
-        <span class="chip">Cancella: <strong>tocca card/linea</strong></span>
+      <div class="toolbarHint">
+        <span class="chip">Header card: <strong>trascina per muovere</strong></span>
+        <span class="chip">Angolo: <strong>trascina per ridimensionare</strong></span>
+        <span class="chip">Tocco card: <strong>apri contenuto</strong></span>
+        <span class="chip">Connetti: <strong>toca due card</strong></span>
       </div>
-
       <div class="mainBody">
         <div class="deskViewport" id="deskViewport">
           <div class="deskContent" id="deskContent">
@@ -442,9 +363,9 @@
     <div class="modalBox">
       <div class="modalTop">
         <div class="title" id="modalTitle">Viewer</div>
-        <div style="display:flex; gap:8px; flex-wrap:wrap;">
-          <button class="btn small" id="modalOpenNewTab" style="display:none;">Apri in nuova scheda</button>
-          <button class="btn small danger" id="modalClose">Chiudi</button>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="btn small" id="openNewTabBtn" style="display:none;">Apri in nuova scheda</button>
+          <button class="btn small danger" id="closeModalBtn">Chiudi</button>
         </div>
       </div>
       <div class="modalBody">
@@ -454,952 +375,708 @@
   </div>
 
   <script>
-    // ---------- PDF.js setup (robusto) ----------
-    // Se per qualsiasi motivo pdfjsLib non viene caricato (CSP, CDN bloccato, ecc.)
-    // l'app NON deve crashare: i PDF si apriranno comunque in nuova scheda.
-    const PDFJS = (typeof window !== "undefined") ? window.pdfjsLib : undefined;
-    const pdfEnabled = !!(PDFJS && typeof PDFJS.getDocument === "function");
+    const $ = (s,el=document)=>el.querySelector(s);
+    const $$ = (s,el=document)=>Array.from(el.querySelectorAll(s));
+    const uid = ()=>Math.random().toString(16).slice(2)+Date.now().toString(16);
+    const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 
-    if(pdfEnabled){
-      PDFJS.GlobalWorkerOptions.workerSrc =
-        "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.7.76/legacy/build/pdf.worker.min.js";
-    } else {
-      // Non lanciare errori: degradare in modo elegante.
-      console.warn("PDF.js non disponibile: anteprime e rendering PDF disabilitati. (Apri in nuova scheda resta attivo.)");
-    }
+    const deskViewport = document.getElementById("deskViewport");
+    const deskContent  = document.getElementById("deskContent");
+    const svgLayer     = document.getElementById("svgLayer");
+    const sourcesList  = document.getElementById("sourcesList");
+    const toast        = document.getElementById("toast");
 
-    // ---------- Utils ----------
-    const $ = (sel, el=document) => el.querySelector(sel);
-    const $$ = (sel, el=document) => Array.from(el.querySelectorAll(sel));
-    const uid = () => Math.random().toString(16).slice(2) + Date.now().toString(16);
-    const clamp = (v,a,b)=> Math.max(a, Math.min(b, v));
+    const modal        = document.getElementById("modal");
+    const viewer       = document.getElementById("viewer");
+    const modalTitle   = document.getElementById("modalTitle");
+    const openNewTabBtn= document.getElementById("openNewTabBtn");
+
+    const state = {
+      view:{scale:1,tx:60,ty:60},
+      mode:"move", // move | pan | connect | delete
+      cards:[],
+      connectors:[],
+      sources:[],
+      selectedCardId:null,
+      connectingFrom:null,
+      drag:null,
+      panStart:null,
+      activePointerId:null
+    };
 
     function showToast(msg){
-      const t = $("#toast");
-      t.textContent = msg;
-      t.classList.add("show");
+      toast.textContent = msg;
+      toast.classList.add("show");
       clearTimeout(showToast._tm);
-      showToast._tm = setTimeout(()=> t.classList.remove("show"), 2400);
+      showToast._tm = setTimeout(()=>toast.classList.remove("show"),2200);
     }
 
-    function viewportRect(){ return deskViewport.getBoundingClientRect(); }
-
-    // view state
-    const view = { scale: 1, tx: 60, ty: 60 };
-
-    function screenToDesk(pt){
-      const r = viewportRect();
-      const lx = pt.x - r.left;
-      const ly = pt.y - r.top;
-      return { x: (lx - view.tx)/view.scale, y: (ly - view.ty)/view.scale };
+    function updateZoomLabel(){
+      document.getElementById("zoomLabel").textContent = Math.round(state.view.scale*100)+"%";
     }
 
     function applyTransform(){
-      deskContent.style.transform = `translate(${view.tx}px, ${view.ty}px) scale(${view.scale})`;
-      $("#zoomPct").textContent = Math.round(view.scale*100) + "%";
+      const v = state.view;
+      deskContent.style.transform = `translate(${v.tx}px,${v.ty}px) scale(${v.scale})`;
+      updateZoomLabel();
     }
 
     function resetView(){
-      view.scale = 1; view.tx = 60; view.ty = 60;
+      state.view.scale = 1;
+      state.view.tx = 60;
+      state.view.ty = 60;
       applyTransform();
     }
 
-    function getYouTubeEmbed(url){
-      try{
-        const u = new URL(url);
-        if(u.hostname.includes("youtu.be")){
-          const id = u.pathname.replace("/","");
-          return `https://www.youtube.com/embed/${id}`;
-        }
-        if(u.hostname.includes("youtube.com")){
-          const id = u.searchParams.get("v");
-          if(id) return `https://www.youtube.com/embed/${id}`;
-          if(u.pathname.startsWith("/shorts/")){
-            const id2 = u.pathname.split("/shorts/")[1].split(/[/?#]/)[0];
-            return `https://www.youtube.com/embed/${id2}`;
-          }
-        }
-      }catch(e){}
-      return null;
-    }
-    const isLikelyMp4 = (url)=> /\.mp4(\?.*)?$/i.test(url);
-
-    function downloadText(filename, text){
-      const blob = new Blob([text], {type:"application/json"});
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      URL.revokeObjectURL(a.href);
-      a.remove();
-    }
-
-    function fileToBase64(file){
-      return new Promise((resolve, reject)=>{
-        const r = new FileReader();
-        r.onload = ()=> resolve(r.result);
-        r.onerror = reject;
-        r.readAsDataURL(file);
-      });
-    }
-
-    function arrayBufferToBase64(buf){
-      const bytes = new Uint8Array(buf);
-      let bin = "";
-      for(let i=0;i<bytes.length;i++) bin += String.fromCharCode(bytes[i]);
-      return btoa(bin);
-    }
-
-    function base64ToArrayBuffer(b64){
-      const bin = atob(b64);
-      const len = bin.length;
-      const bytes = new Uint8Array(len);
-      for(let i=0;i<len;i++) bytes[i] = bin.charCodeAt(i);
-      return bytes.buffer;
-    }
-
-    // ---------- Elements ----------
-    const deskViewport = $("#deskViewport");
-    const deskContent  = $("#deskContent");
-    const svgLayer     = $("#svgLayer");
-    const sourcesList  = $("#sourcesList");
-
-    // ---------- State ----------
-    const sources = [];
-    const cards = [];
-    const connectors = [];
-
-    const app = {
-      mode: "select",          // select | pan | connect | delete
-      connectFirst: null,
-      pointers: new Map(),
-      pinch: null,
-      placeSourceId: null       // when set: tap desk to place a card
-    };
-
-    let selectedCardId = null;
-
-    function updateCounts(){ $("#counts").textContent = cards.length; }
-
-    function setPlace(sourceId){
-      app.placeSourceId = sourceId;
-      const s = sources.find(x=>x.id===sourceId);
-      if(!s) return;
-      $("#placeChip").style.display = "inline-flex";
-      $("#placeLabel").textContent = s.type.toUpperCase();
-      showToast("Tocca un punto vuoto del desk per piazzare la card.");
-    }
-
-    function clearPlace(){
-      app.placeSourceId = null;
-      $("#placeChip").style.display = "none";
+    function updateCardCount(){
+      document.getElementById("cardCount").textContent = state.cards.length;
     }
 
     function setMode(mode){
-      app.mode = mode;
-      app.connectFirst = null;
-      ["modeSelect","modePan","modeConnect","modeDelete"].forEach(id => $("#"+id).classList.remove("active"));
-      if(mode==="select") $("#modeSelect").classList.add("active");
-      if(mode==="pan") $("#modePan").classList.add("active");
-      if(mode==="connect") $("#modeConnect").classList.add("active");
-      if(mode==="delete") $("#modeDelete").classList.add("active");
-
-      if(mode==="connect") showToast("Connetti: tocca 2 card per creare una linea.");
-      if(mode==="delete")  showToast("Cancella: tocca una card o una linea.");
-      if(mode==="pan")     showToast("Pan: trascina lo sfondo (o usa due dita).");
-      if(mode==="select")  showToast("Muovi: trascina le card (header).");
+      state.mode = mode;
+      state.connectingFrom = null;
+      ["modeMove","modePan","modeConnect","modeDelete"].forEach(id=>{
+        document.getElementById(id).classList.remove("active");
+      });
+      if(mode==="move") document.getElementById("modeMove").classList.add("active");
+      if(mode==="pan") document.getElementById("modePan").classList.add("active");
+      if(mode==="connect") document.getElementById("modeConnect").classList.add("active");
+      if(mode==="delete") document.getElementById("modeDelete").classList.add("active");
+      if(mode==="connect") showToast("Connetti: tocca due card.");
+      else if(mode==="delete") showToast("Cancella: tocca card o linea.");
+      else if(mode==="pan") showToast("Pan: trascina lo sfondo per muovere.");
     }
 
-    // ---------- Rendering sources ----------
     function renderSources(){
-      sourcesList.innerHTML = "";
-      if(sources.length === 0){
-        const empty = document.createElement("div");
-        empty.className = "note";
-        empty.style.padding = "10px 2px";
-        empty.textContent = "Nessuna fonte nel deposito. Aggiungi qui sopra: la card appare subito sul desk e resta anche nel deposito.";
-        sourcesList.appendChild(empty);
+      sourcesList.innerHTML="";
+      if(state.sources.length===0){
+        const d=document.createElement("div");
+        d.className="note";
+        d.style.padding="8px 2px";
+        d.textContent="Nessuna fonte caricata. Usa i pulsanti sopra per aggiungere immagini, PDF, web, video o testo.";
+        sourcesList.appendChild(d);
         return;
       }
-
-      for(const s of sources){
-        const wrap = document.createElement("div");
-        wrap.className = "sourceItem";
-        wrap.dataset.id = s.id;
-
-        const t = document.createElement("div");
-        t.className = "thumb";
-        if(s.type === "image"){
-          const img = new Image(); img.src = s.dataUrl; t.appendChild(img);
-        }else if(s.type === "pdf" && s.thumbDataUrl){
-          const img = new Image(); img.src = s.thumbDataUrl; t.appendChild(img);
+      for(const s of state.sources){
+        const wrap=document.createElement("div");
+        wrap.className="sourceItem";
+        wrap.dataset.id=s.id;
+        const t=document.createElement("div");
+        t.className="thumb";
+        if(s.type==="image" && s.dataUrl){
+          const img=new Image();img.src=s.dataUrl;t.appendChild(img);
         }else{
-          t.textContent = s.type.toUpperCase();
+          t.textContent=s.type.toUpperCase();
         }
+        const meta=document.createElement("div");
+        meta.className="meta";
+        const title=document.createElement("div");
+        title.className="title";
+        title.textContent=s.title||"Senza titolo";
+        const type=document.createElement("div");
+        type.className="type";
+        type.textContent=s.desc||s.type;
+        const act=document.createElement("div");
+        act.className="actions";
 
-        const meta = document.createElement("div");
-        meta.className = "meta";
+        const addBtn=document.createElement("button");
+        addBtn.className="btn small";
+        addBtn.textContent="Nuova card";
+        addBtn.onclick=()=>addCardFromSource(s.id);
 
-        const title = document.createElement("div");
-        title.className = "title";
-        title.textContent = s.title || "Senza titolo";
-
-        const type = document.createElement("div");
-        type.className = "type";
-        type.textContent = s.desc || s.type;
-
-        const actions = document.createElement("div");
-        actions.className = "actions";
-
-        const place = document.createElement("button");
-        place.className = "btn small primary";
-        place.textContent = "Posiziona";
-        place.onclick = ()=> setPlace(s.id);
-
-        const addCenter = document.createElement("button");
-        addCenter.className = "btn small";
-        addCenter.textContent = "Aggiungi al centro";
-        addCenter.onclick = ()=> addCardFromSource(s.id, null);
-
-        const del = document.createElement("button");
-        del.className = "btn small danger";
-        del.textContent = "Rimuovi";
-        del.onclick = ()=> {
-          const idx = sources.findIndex(x=>x.id===s.id);
-          if(idx>=0) sources.splice(idx,1);
-          if(app.placeSourceId === s.id) clearPlace();
+        const delBtn=document.createElement("button");
+        delBtn.className="btn small danger";
+        delBtn.textContent="Cancella fonte";
+        delBtn.onclick=()=>{
+          const idx=state.sources.findIndex(x=>x.id===s.id);
+          if(idx>=0) state.sources.splice(idx,1);
           renderSources();
         };
 
-        actions.appendChild(place);
-        actions.appendChild(addCenter);
-        actions.appendChild(del);
-
+        act.appendChild(addBtn);
+        act.appendChild(delBtn);
         meta.appendChild(title);
         meta.appendChild(type);
-        meta.appendChild(actions);
-
+        meta.appendChild(act);
         wrap.appendChild(t);
         wrap.appendChild(meta);
         sourcesList.appendChild(wrap);
       }
     }
 
-    // ---------- Rendering cards ----------
     function renderCards(){
-      $$(".card", deskContent).forEach(n => n.remove());
+      $$(".card",deskContent).forEach(el=>el.remove());
+      for(const c of state.cards){
+        const el=document.createElement("div");
+        el.className="card";
+        if(state.selectedCardId===c.id) el.classList.add("selected");
+        el.style.left=c.x+"px";
+        el.style.top=c.y+"px";
+        el.style.width=c.w+"px";
+        el.style.height=c.h+"px";
+        el.dataset.id=c.id;
 
-      for(const c of cards){
-        const el = document.createElement("div");
-        el.className = "card";
-        if(c.id === selectedCardId) el.classList.add("selected");
-        el.dataset.id = c.id;
-        el.style.left = c.x + "px";
-        el.style.top  = c.y + "px";
-        el.style.width  = c.w + "px";
-        el.style.height = c.h + "px";
+        const header=document.createElement("div");
+        header.className="cardHeader";
+        const left=document.createElement("div");
+        left.style.display="flex";
+        left.style.alignItems="center";
+        left.style.gap="6px";
+        left.style.minWidth="0";
+        const badge=document.createElement("div");
+        badge.className="badge";
+        badge.textContent=c.type;
+        const title=document.createElement("div");
+        title.className="cardTitle";
+        title.textContent=c.title||c.type.toUpperCase();
+        left.appendChild(badge);left.appendChild(title);
 
-        const header = document.createElement("div");
-        header.className = "cardHeader";
+        const btns=document.createElement("div");
+        btns.className="cardBtns";
+        const openBtn=document.createElement("div");
+        openBtn.className="iconBtn";
+        openBtn.textContent="↗";
+        openBtn.title="Apri";
+        openBtn.onclick=e=>{e.stopPropagation();openCard(c.id);};
+        const delBtn=document.createElement("div");
+        delBtn.className="iconBtn danger";
+        delBtn.textContent="×";
+        delBtn.title="Elimina card";
+        delBtn.onclick=e=>{e.stopPropagation();deleteCard(c.id);};
+        btns.appendChild(openBtn);btns.appendChild(delBtn);
+        header.appendChild(left);header.appendChild(btns);
 
-        const lefty = document.createElement("div");
-        lefty.style.display = "flex";
-        lefty.style.alignItems = "center";
-        lefty.style.gap = "8px";
-        lefty.style.minWidth = "0";
-
-        const badge = document.createElement("div");
-        badge.className = "badge";
-        badge.textContent = c.type;
-
-        const title = document.createElement("div");
-        title.className = "cardTitle";
-        title.textContent = c.title || c.type.toUpperCase();
-
-        lefty.appendChild(badge);
-        lefty.appendChild(title);
-
-        const btns = document.createElement("div");
-        btns.className = "cardBtns";
-
-        const openBtn = document.createElement("div");
-        openBtn.className = "iconBtn";
-        openBtn.title = "Apri";
-        openBtn.innerHTML = "↗";
-        openBtn.onclick = (e)=> { e.stopPropagation(); openCard(c.id); };
-
-        const delBtn = document.createElement("div");
-        delBtn.className = "iconBtn danger";
-        delBtn.title = "Elimina";
-        delBtn.innerHTML = "✕";
-        delBtn.onclick = (e)=> { e.stopPropagation(); deleteCard(c.id); };
-
-        btns.appendChild(openBtn);
-        btns.appendChild(delBtn);
-
-        header.appendChild(lefty);
-        header.appendChild(btns);
-
-        const body = document.createElement("div");
-        body.className = "cardBody";
-        const prev = document.createElement("div");
-        prev.className = "preview";
-
-        if(c.type === "image"){
-          const img = new Image(); img.src = c.dataUrl; prev.appendChild(img);
-        }else if(c.type === "text"){
-          const sn = document.createElement("div"); sn.className = "snippet"; sn.textContent = c.text || ""; prev.appendChild(sn);
-        }else if(c.type === "pdf"){
-          if(c.thumbDataUrl){ const img = new Image(); img.src = c.thumbDataUrl; prev.appendChild(img); }
-          else prev.textContent = "PDF";
-        }else if(c.type === "web"){
-          prev.innerHTML = `<div style="padding:12px;text-align:left;">
-            <div style="font-weight:950; margin-bottom:6px;">🌐 Pagina web</div>
-            <div style="opacity:.75; font-size:12px; word-break:break-word;">${(c.url||"").replaceAll("<","&lt;")}</div>
-            <div style="opacity:.55; font-size:12px; margin-top:10px;">Apri per navigare</div>
-          </div>`;
-        }else if(c.type === "video"){
-          prev.innerHTML = `<div style="padding:12px;text-align:left;">
-            <div style="font-weight:950; margin-bottom:6px;">▶ Video</div>
-            <div style="opacity:.75; font-size:12px; word-break:break-word;">${(c.url||"").replaceAll("<","&lt;")}</div>
-            <div style="opacity:.55; font-size:12px; margin-top:10px;">Apri per avviare</div>
-          </div>`;
+        const body=document.createElement("div");
+        body.className="cardBody";
+        const prev=document.createElement("div");
+        prev.className="preview";
+        if(c.type==="image" && c.dataUrl){
+          const img=new Image();img.src=c.dataUrl;prev.appendChild(img);
+        }else if(c.type==="text"){
+          const sn=document.createElement("div");
+          sn.className="snippet";
+          sn.textContent=c.text||"";
+          prev.appendChild(sn);
+        }else if(c.type==="pdf"){
+          prev.textContent="PDF – tocca per aprire";
+        }else if(c.type==="web"){
+          prev.textContent="🌐 Pagina web – tocca per aprire";
+        }else if(c.type==="video"){
+          prev.textContent="▶ Video – tocca per aprire";
         }else{
-          prev.textContent = "Contenuto";
+          prev.textContent="Contenuto";
         }
-
         body.appendChild(prev);
 
-        const handle = document.createElement("div");
-        handle.className = "resizeHandle";
-        handle.title = "Ridimensiona";
+        const handle=document.createElement("div");
+        handle.className="resizeHandle";
 
         el.appendChild(header);
         el.appendChild(body);
         el.appendChild(handle);
 
-        el.addEventListener("pointerdown", (e)=> onCardPointerDown(e, c.id, header, handle));
-        el.addEventListener("click", (e)=>{
+        // TAP / CLICK card
+        el.addEventListener("click",e=>{
           if(e.defaultPrevented) return;
-          if(app.mode === "delete"){ deleteCard(c.id); return; }
-          if(app.mode === "connect"){ connectClick(c.id); return; }
-          if(e.target.classList.contains("iconBtn")) return;
+          if(state.mode==="delete"){deleteCard(c.id);return;}
+          if(state.mode==="connect"){handleConnectTap(c.id);return;}
           openCard(c.id);
         });
 
+        // DRAG move / resize (iPad friendly: niente pointer capture)
+        header.addEventListener("pointerdown",e=>startCardDrag(e,c.id,"move"));
+        handle.addEventListener("pointerdown",e=>startCardDrag(e,c.id,"resize"));
+
         deskContent.appendChild(el);
       }
-
-      updateCounts();
+      updateCardCount();
       renderConnectors();
     }
 
     function renderConnectors(){
-      svgLayer.setAttribute("viewBox", "0 0 8000 8000");
-      svgLayer.innerHTML = "";
-
-      for(const cn of connectors){
-        const a = cards.find(x=>x.id===cn.a);
-        const b = cards.find(x=>x.id===cn.b);
-        if(!a || !b) continue;
-
-        const ax = a.x + a.w/2, ay = a.y + a.h/2;
-        const bx = b.x + b.w/2, by = b.y + b.h/2;
-
-        const dx = Math.abs(bx-ax);
-        const c1x = ax + (bx>ax ? dx*0.35 : -dx*0.35);
-        const c1y = ay;
-        const c2x = bx - (bx>ax ? dx*0.35 : -dx*0.35);
-        const c2y = by;
-
-        const d = `M ${ax} ${ay} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${bx} ${by}`;
-
-        const glow = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        glow.setAttribute("d", d);
-        glow.setAttribute("fill", "none");
-        glow.setAttribute("stroke", cn.color || "#6ae4ff");
-        glow.setAttribute("stroke-width", "14");
-        glow.setAttribute("stroke-linecap", "round");
-        glow.setAttribute("opacity", "0.12");
-        glow.style.pointerEvents = "none";
-
-        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        path.setAttribute("d", d);
-        path.setAttribute("fill", "none");
-        path.setAttribute("stroke", cn.color || "#6ae4ff");
-        path.setAttribute("stroke-width", "6");
-        path.setAttribute("stroke-linecap", "round");
-        path.setAttribute("opacity", "0.95");
+      svgLayer.innerHTML="";
+      svgLayer.setAttribute("viewBox","0 0 8000 8000");
+      for(const cn of state.connectors){
+        const a=state.cards.find(x=>x.id===cn.a);
+        const b=state.cards.find(x=>x.id===cn.b);
+        if(!a||!b) continue;
+        const ax=a.x+a.w/2, ay=a.y+a.h/2;
+        const bx=b.x+b.w/2, by=b.y+b.h/2;
+        const dx=Math.abs(bx-ax);
+        const c1x=ax+(bx>ax?dx*0.35:-dx*0.35);
+        const c1y=ay;
+        const c2x=bx-(bx>ax?dx*0.35:-dx*0.35);
+        const c2y=by;
+        const d=`M ${ax} ${ay} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${bx} ${by}`;
+        const glow=document.createElementNS("http://www.w3.org/2000/svg","path");
+        glow.setAttribute("d",d);
+        glow.setAttribute("fill","none");
+        glow.setAttribute("stroke",cn.color||"#6ae4ff");
+        glow.setAttribute("stroke-width","14");
+        glow.setAttribute("stroke-linecap","round");
+        glow.setAttribute("opacity","0.12");
+        glow.style.pointerEvents="none";
+        const path=document.createElementNS("http://www.w3.org/2000/svg","path");
+        path.setAttribute("d",d);
+        path.setAttribute("fill","none");
+        path.setAttribute("stroke",cn.color||"#6ae4ff");
+        path.setAttribute("stroke-width","5");
+        path.setAttribute("stroke-linecap","round");
+        path.setAttribute("opacity","0.95");
         path.classList.add("conn");
-        path.style.pointerEvents = "stroke";
-        path.addEventListener("click", (e)=>{
+        path.style.pointerEvents="stroke";
+        path.addEventListener("click",e=>{
           e.stopPropagation();
-          if(app.mode === "delete"){
-            const idx = connectors.findIndex(x=>x.id===cn.id);
-            if(idx>=0) connectors.splice(idx,1);
+          if(state.mode==="delete"){
+            const idx=state.connectors.findIndex(x=>x.id===cn.id);
+            if(idx>=0) state.connectors.splice(idx,1);
             renderConnectors();
           }else{
-            showToast("Linea: passa a 'Cancella' per rimuoverla.");
+            showToast("Linea selezionata: passa a 'Cancella' per rimuoverla.");
           }
         });
-
         svgLayer.appendChild(glow);
         svgLayer.appendChild(path);
       }
     }
 
-    // ---------- Card creation ----------
-    function addCardFromSource(sourceId, atDeskPoint){
-      const s = sources.find(x=>x.id===sourceId);
-      if(!s) return;
-
-      const pt = atDeskPoint || (()=>{
-        const r = viewportRect();
-        return screenToDesk({x: r.left + r.width/2, y: r.top + r.height/2});
-      })();
-
-      const card = {
-        id: uid(),
-        type: s.type,
-        title: s.title || s.type.toUpperCase(),
-        x: clamp(pt.x - 180, 0, 7600),
-        y: clamp(pt.y - 120, 0, 7600),
-        w: (s.type==="text") ? 340 : 360,
-        h: (s.type==="image") ? 260 : (s.type==="pdf" ? 300 : 240),
-      };
-
-      if(s.type==="image") card.dataUrl = s.dataUrl;
-      if(s.type==="pdf"){
-        card.pdfBase64 = s.pdfBase64;
-        card.fileName = s.fileName || "documento.pdf";
-        card.thumbDataUrl = s.thumbDataUrl || null;
-      }
-      if(s.type==="text") card.text = s.text || "";
-      if(s.type==="web")  card.url = s.url;
-      if(s.type==="video") card.url = s.url;
-
-      cards.push(card);
-      selectedCardId = card.id;
-      renderCards();
-    }
-
     function deleteCard(cardId){
-      for(let i=connectors.length-1;i>=0;i--){
-        if(connectors[i].a===cardId || connectors[i].b===cardId) connectors.splice(i,1);
-      }
-      const idx = cards.findIndex(x=>x.id===cardId);
-      if(idx>=0) cards.splice(idx,1);
-      if(selectedCardId === cardId) selectedCardId = null;
+      state.connectors=state.connectors.filter(cn=>cn.a!==cardId && cn.b!==cardId);
+      state.cards=state.cards.filter(c=>c.id!==cardId);
+      if(state.selectedCardId===cardId) state.selectedCardId=null;
       renderCards();
       showToast("Card eliminata.");
     }
 
+    function handleConnectTap(cardId){
+      if(!state.connectingFrom){
+        state.connectingFrom=cardId;
+        state.selectedCardId=cardId;
+        $$(".card",deskContent).forEach(el=>{
+          el.classList.toggle("selected",el.dataset.id===cardId);
+        });
+        showToast("Ora tocca un'altra card per completare il connettore.");
+        return;
+      }
+      if(state.connectingFrom===cardId){
+        state.connectingFrom=null;
+        showToast("Connessione annullata.");
+        return;
+      }
+      const exists=state.connectors.some(cn=>(cn.a===state.connectingFrom&&cn.b===cardId)||(cn.a===cardId&&cn.b===state.connectingFrom));
+      if(exists){showToast("Connettore già presente.");state.connectingFrom=null;return;}
+      state.connectors.push({id:uid(),a:state.connectingFrom,b:cardId,color:document.getElementById("connColor").value});
+      state.connectingFrom=null;
+      renderConnectors();
+      showToast("Connettore creato.");
+    }
+
     function clearDesk(){
-      cards.length = 0;
-      connectors.length = 0;
-      selectedCardId = null;
+      state.cards=[];
+      state.connectors=[];
+      state.selectedCardId=null;
       renderCards();
       showToast("Desk svuotato.");
     }
 
     function clearSources(){
-      sources.length = 0;
-      clearPlace();
+      state.sources=[];
       renderSources();
       showToast("Fonti svuotate.");
     }
 
-    // ---------- Connect mode ----------
-    function connectClick(cardId){
-      if(!app.connectFirst){
-        app.connectFirst = cardId;
-        selectedCardId = cardId;
-        renderCards();
-        showToast("Ora tocca la seconda card…");
-        return;
-      }
-      if(app.connectFirst === cardId){ showToast("Scegli una card diversa."); return; }
-      const exists = connectors.some(cn =>
-        (cn.a===app.connectFirst && cn.b===cardId) || (cn.a===cardId && cn.b===app.connectFirst)
-      );
-      if(exists){ showToast("Connettore già presente."); app.connectFirst = null; return; }
-      connectors.push({ id: uid(), a: app.connectFirst, b: cardId, color: $("#connColor").value });
-      app.connectFirst = null;
-      renderConnectors();
-      showToast("Connettore creato.");
-    }
-
-    function deleteAllConnectors(){
-      connectors.length = 0;
-      renderConnectors();
-      showToast("Connettori cancellati.");
-    }
-
-    // ---------- Drag / Resize ----------
-    let drag = null;
-
-    function onCardPointerDown(e, cardId){
-      if(e.target.classList.contains("iconBtn")) return;
-      const c = cards.find(x=>x.id===cardId);
-      if(!c) return;
-
-      if(app.mode === "delete" || app.mode === "connect") return;
-
-      // selezione visuale senza rifare tutto il render (iPad / Safari diventano più stabili)
-      selectedCardId = cardId;
-      $$(".card", deskContent).forEach(el => {
-        el.classList.toggle("selected", el.dataset.id === cardId);
-      });
-
-      const cardEl = e.currentTarget;
-      const headerEl = cardEl.querySelector(".cardHeader");
-      const handleEl = cardEl.querySelector(".resizeHandle");
-
-      const isResize = (e.target === handleEl);
-      const isMove = headerEl && headerEl.contains(e.target) && app.mode === "select";
-      if(!(isResize || isMove)) return;
-
+    function startCardDrag(e,cardId,kind){
+      if(state.mode!=="move") return;
       e.preventDefault();
       e.stopPropagation();
-
-      const startDesk = screenToDesk({x:e.clientX, y:e.clientY});
-
-      drag = {
+      const card=state.cards.find(c=>c.id===cardId);
+      if(!card) return;
+      state.selectedCardId=cardId;
+      $$(".card",deskContent).forEach(el=>{
+        el.classList.toggle("selected",el.dataset.id===cardId);
+      });
+      state.activePointerId=e.pointerId;
+      state.drag={
         cardId,
-        kind: isResize ? "resize" : "move",
-        startX: c.x, startY: c.y,
-        startW: c.w, startH: c.h,
-        startDeskX: startDesk.x,
-        startDeskY: startDesk.y,
-        cardEl
+        kind,
+        startX:card.x,
+        startY:card.y,
+        startW:card.w,
+        startH:card.h,
+        startClientX:e.clientX,
+        startClientY:e.clientY
       };
-
-      cardEl.setPointerCapture(e.pointerId);
-
-      const onMove = (ev)=>{
-        if(!drag || drag.cardId !== cardId) return;
-        ev.preventDefault();
-        const nowDesk = screenToDesk({x:ev.clientX, y:ev.clientY});
-        const dx = nowDesk.x - drag.startDeskX;
-        const dy = nowDesk.y - drag.startDeskY;
-
-        if(drag.kind === "move"){
-          c.x = clamp(drag.startX + dx, 0, 8000 - 60);
-          c.y = clamp(drag.startY + dy, 0, 8000 - 60);
-        }else{
-          c.w = clamp(drag.startW + dx, 180, 900);
-          c.h = clamp(drag.startH + dy, 120, 780);
-        }
-
-        drag.cardEl.style.left = c.x + "px";
-        drag.cardEl.style.top  = c.y + "px";
-        drag.cardEl.style.width  = c.w + "px";
-        drag.cardEl.style.height = c.h + "px";
-
-        renderConnectors();
-      };
-
-      const onUp = (ev)=>{
-        if(!drag || drag.cardId !== cardId) return;
-        try{ cardEl.releasePointerCapture(e.pointerId); }catch(_){}
-        drag = null;
-        window.removeEventListener("pointermove", onMove);
-        window.removeEventListener("pointerup", onUp);
-      };
-
-      window.addEventListener("pointermove", onMove, {passive:false});
-      window.addEventListener("pointerup", onUp, {passive:false});
+      window.addEventListener("pointermove",onCardDragMove,{passive:false});
+      window.addEventListener("pointerup",onCardDragEnd,{passive:false});
+      window.addEventListener("pointercancel",onCardDragEnd,{passive:false});
     }
 
-        const el = $(`.card[data-id="${cardId}"]`, deskContent);
-        if(el){
-          el.style.left = c.x + "px";
-          el.style.top = c.y + "px";
-          el.style.width = c.w + "px";
-          el.style.height = c.h + "px";
-        }
-        renderConnectors();
-      };
-
-      const onUp = ()=>{
-        if(!drag) return;
-        try{ e.currentTarget.releasePointerCapture(e.pointerId); }catch(_){ }
-        drag = null;
-        window.removeEventListener("pointermove", onMove);
-        window.removeEventListener("pointerup", onUp);
-      };
-
-      window.addEventListener("pointermove", onMove, {passive:false});
-      window.addEventListener("pointerup", onUp, {passive:false});
-    }
-
-    // ---------- Desk pan / zoom + PLACE ON TAP ----------
-    deskViewport.addEventListener("pointerdown", (e)=>{
-      if(e.target.closest(".card")) return;
-
-      deskViewport.setPointerCapture(e.pointerId);
-      app.pointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
-
-      if(app.pointers.size === 2){
-        const pts = Array.from(app.pointers.values());
-        const dist = Math.hypot(pts[1].x-pts[0].x, pts[1].y-pts[0].y);
-        app.pinch = { startDist: dist, startScale: view.scale };
-      }else{
-        if(app.mode === "pan") app.pinch = { panStart: {x:e.clientX, y:e.clientY, tx:view.tx, ty:view.ty} };
-      }
-    }, {passive:false});
-
-    deskViewport.addEventListener("pointermove", (e)=>{
-      if(!app.pointers.has(e.pointerId)) return;
-      app.pointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
-
-      if(app.pointers.size === 2 && app.pinch && app.pinch.startDist){
-        e.preventDefault();
-        const pts = Array.from(app.pointers.values());
-        const dist = Math.hypot(pts[1].x-pts[0].x, pts[1].y-pts[0].y);
-        const factor = dist / app.pinch.startDist;
-        view.scale = clamp(app.pinch.startScale * factor, 0.35, 2.5);
-        applyTransform();
-        return;
-      }
-
-      if(app.mode === "pan" && app.pinch && app.pinch.panStart){
-        e.preventDefault();
-        const p0 = app.pinch.panStart;
-        view.tx = p0.tx + (e.clientX - p0.x);
-        view.ty = p0.ty + (e.clientY - p0.y);
-        applyTransform();
-      }
-    }, {passive:false});
-
-    deskViewport.addEventListener("pointerup", (e)=>{
-      app.pointers.delete(e.pointerId);
-      if(app.pointers.size < 2) app.pinch = null;
-    });
-    deskViewport.addEventListener("pointercancel", (e)=>{
-      app.pointers.delete(e.pointerId);
-      if(app.pointers.size < 2) app.pinch = null;
-    });
-
-    deskViewport.addEventListener("wheel", (e)=>{
+    function onCardDragMove(e){
+      if(!state.drag || e.pointerId!==state.activePointerId) return;
       e.preventDefault();
-      const delta = -e.deltaY;
-      const zoom = delta > 0 ? 1.08 : 0.92;
-      const pt = screenToDesk({x:e.clientX, y:e.clientY});
-      view.scale = clamp(view.scale * zoom, 0.35, 2.5);
-      // keep mouse point stable
-      const r = viewportRect();
-      const lx = e.clientX - r.left;
-      const ly = e.clientY - r.top;
-      view.tx = lx - pt.x * view.scale;
-      view.ty = ly - pt.y * view.scale;
-      applyTransform();
-    }, {passive:false});
+      const d=state.drag;
+      const card=state.cards.find(c=>c.id===d.cardId);
+      if(!card) return;
+      const dxScreen=e.clientX-d.startClientX;
+      const dyScreen=e.clientY-d.startClientY;
+      const dxDesk=dxScreen/state.view.scale;
+      const dyDesk=dyScreen/state.view.scale;
+      if(d.kind==="move"){
+        card.x=clamp(d.startX+dxDesk,0,8000-100);
+        card.y=clamp(d.startY+dyDesk,0,8000-80);
+      }else{
+        card.w=clamp(d.startW+dxDesk,180,900);
+        card.h=clamp(d.startH+dyDesk,120,780);
+      }
+      const el=$(`.card[data-id="${card.id}"]`,deskContent);
+      if(el){
+        el.style.left=card.x+"px";
+        el.style.top=card.y+"px";
+        el.style.width=card.w+"px";
+        el.style.height=card.h+"px";
+      }
+      renderConnectors();
+    }
 
-    deskViewport.addEventListener("click", (e)=>{
+    function onCardDragEnd(e){
+      if(!state.drag || e.pointerId!==state.activePointerId) return;
+      state.drag=null;
+      state.activePointerId=null;
+      window.removeEventListener("pointermove",onCardDragMove);
+      window.removeEventListener("pointerup",onCardDragEnd);
+      window.removeEventListener("pointercancel",onCardDragEnd);
+    }
+
+    // Pan & zoom desk
+    deskViewport.addEventListener("pointerdown",e=>{
+      if(state.mode!=="pan") return;
       if(e.target.closest(".card")) return;
-
-      // PLACE MODE: tap on desk to create the card here
-      if(app.placeSourceId){
-        const pt = screenToDesk({x:e.clientX, y:e.clientY});
-        addCardFromSource(app.placeSourceId, pt);
-        clearPlace();
-        showToast("Card piazzata.");
-        return;
-      }
-
-      if(app.mode === "connect"){
-        app.connectFirst = null;
-        showToast("Selezione connettore annullata.");
-      }
-
-      selectedCardId = null;
-      renderCards();
+      e.preventDefault();
+      state.activePointerId=e.pointerId;
+      state.panStart={
+        startTx:state.view.tx,
+        startTy:state.view.ty,
+        startX:e.clientX,
+        startY:e.clientY
+      };
+      window.addEventListener("pointermove",onPanMove,{passive:false});
+      window.addEventListener("pointerup",onPanEnd,{passive:false});
+      window.addEventListener("pointercancel",onPanEnd,{passive:false});
     });
 
-    // ---------- Viewer ----------
-    const modal = $("#modal");
-    const viewer = $("#viewer");
+    function onPanMove(e){
+      if(!state.panStart || e.pointerId!==state.activePointerId) return;
+      e.preventDefault();
+      const p=state.panStart;
+      state.view.tx=p.startTx+(e.clientX-p.startX);
+      state.view.ty=p.startTy+(e.clientY-p.startY);
+      applyTransform();
+    }
+
+    function onPanEnd(e){
+      if(e.pointerId!==state.activePointerId) return;
+      state.panStart=null;
+      state.activePointerId=null;
+      window.removeEventListener("pointermove",onPanMove);
+      window.removeEventListener("pointerup",onPanEnd);
+      window.removeEventListener("pointercancel",onPanEnd);
+    }
+
+    deskViewport.addEventListener("wheel",e=>{
+      e.preventDefault();
+      const delta=-e.deltaY;
+      const factor=delta>0?1.08:0.92;
+      const rect=deskViewport.getBoundingClientRect();
+      const x=e.clientX-rect.left;
+      const y=e.clientY-rect.top;
+      const beforeX=(x-state.view.tx)/state.view.scale;
+      const beforeY=(y-state.view.ty)/state.view.scale;
+      state.view.scale=clamp(state.view.scale*factor,0.4,2.5);
+      state.view.tx=x-beforeX*state.view.scale;
+      state.view.ty=y-beforeY*state.view.scale;
+      applyTransform();
+    },{passive:false});
+
+    deskViewport.addEventListener("click",e=>{
+      if(e.target.closest(".card")) return;
+      if(state.mode==="connect" && state.connectingFrom){
+        state.connectingFrom=null;
+        showToast("Connessione annullata.");
+      }
+      state.selectedCardId=null;
+      $$(".card",deskContent).forEach(el=>el.classList.remove("selected"));
+    });
+
+    // Viewer
+    function dataUrlFromPdfBase64(b64){
+      return "data:application/pdf;base64,"+b64;
+    }
 
     function openCard(cardId){
-      const c = cards.find(x=>x.id===cardId);
+      const c=state.cards.find(x=>x.id===cardId);
       if(!c) return;
+      modalTitle.textContent=c.title||c.type.toUpperCase();
+      viewer.innerHTML="";
+      openNewTabBtn.style.display="none";
+      openNewTabBtn.onclick=null;
 
-      $("#modalTitle").textContent = c.title || c.type.toUpperCase();
-      viewer.innerHTML = "";
-      $("#modalOpenNewTab").style.display = "none";
-      $("#modalOpenNewTab").onclick = null;
-
-      if(c.type === "image"){
-        const img = new Image(); img.src = c.dataUrl; viewer.appendChild(img);
-      }
-      else if(c.type === "text"){
-        const d = document.createElement("div"); d.className = "text"; d.textContent = c.text || ""; viewer.appendChild(d);
-      }
-      else if(c.type === "web"){
-        const url = c.url;
-        const iframe = document.createElement("iframe");
-        iframe.src = url;
-        iframe.setAttribute("sandbox", "allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox");
-        iframe.referrerPolicy = "no-referrer";
-        iframe.allowFullscreen = true;
+      if(c.type==="image" && c.dataUrl){
+        const img=new Image();img.src=c.dataUrl;viewer.appendChild(img);
+      }else if(c.type==="text"){
+        const d=document.createElement("div");
+        d.className="text";d.textContent=c.text||"";viewer.appendChild(d);
+      }else if(c.type==="web"){
+        const iframe=document.createElement("iframe");
+        iframe.src=c.url;
+        iframe.referrerPolicy="no-referrer";
+        iframe.allow="accelerometer; autoplay; encrypted-media; fullscreen";
         viewer.appendChild(iframe);
-        $("#modalOpenNewTab").style.display = "inline-flex";
-        $("#modalOpenNewTab").onclick = ()=> window.open(url, "_blank", "noopener,noreferrer");
-      }
-      else if(c.type === "video"){
-        const url = c.url;
-        const yt = getYouTubeEmbed(url);
+        openNewTabBtn.style.display="inline-flex";
+        openNewTabBtn.onclick=()=>window.open(c.url,"_blank","noopener,noreferrer");
+      }else if(c.type==="video"){
+        const url=c.url;
+        const yt=toYouTubeEmbed(url);
         if(yt){
-          const iframe = document.createElement("iframe");
-          iframe.src = yt;
-          iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
-          iframe.allowFullscreen = true;
+          const iframe=document.createElement("iframe");
+          iframe.src=yt;
+          iframe.allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
+          iframe.allowFullscreen=true;
           viewer.appendChild(iframe);
-        }else if(isLikelyMp4(url)){
-          const v = document.createElement("video");
-          v.src = url;
-          v.controls = true;
-          v.playsInline = true;
-          viewer.appendChild(v);
+        }else if(/\.mp4(\?.*)?$/i.test(url)){
+          const v=document.createElement("video");
+          v.src=url;v.controls=true;v.playsInline=true;viewer.appendChild(v);
         }else{
-          const iframe = document.createElement("iframe");
-          iframe.src = url;
-          iframe.allow = "autoplay; encrypted-media; fullscreen";
-          iframe.allowFullscreen = true;
-          viewer.appendChild(iframe);
-          $("#modalOpenNewTab").style.display = "inline-flex";
-          $("#modalOpenNewTab").onclick = ()=> window.open(url, "_blank", "noopener,noreferrer");
+          const iframe=document.createElement("iframe");
+          iframe.src=url;iframe.allow="autoplay; encrypted-media; fullscreen";viewer.appendChild(iframe);
         }
-      }
-      else if(c.type === "pdf"){
-        const note = document.createElement("div");
-        note.className = "note";
-        note.style.padding = "8px 12px";
-        note.textContent = pdfEnabled
-          ? "PDF multipagina: scroll verticale."
-          : "PDF: anteprima disabilitata (PDF.js non disponibile). Apri in nuova scheda.";
-        viewer.appendChild(note);
-
-        $("#modalOpenNewTab").style.display = "inline-flex";
-        $("#modalOpenNewTab").onclick = ()=>{
-          const buf = base64ToArrayBuffer(c.pdfBase64);
-          const blob = new Blob([buf], {type:"application/pdf"});
-          const urlObj = URL.createObjectURL(blob);
-          window.open(urlObj, "_blank", "noopener,noreferrer");
-          setTimeout(()=> URL.revokeObjectURL(urlObj), 8000);
+        openNewTabBtn.style.display="inline-flex";
+        openNewTabBtn.onclick=()=>window.open(url,"_blank","noopener,noreferrer");
+      }else if(c.type==="pdf"){
+        const info=document.createElement("div");
+        info.className="note";
+        info.style.padding="8px 10px";
+        info.textContent="PDF: se l'anteprima non si carica, usa 'Apri in nuova scheda'.";
+        viewer.appendChild(info);
+        if(c.pdfBase64){
+          const embed=document.createElement("embed");
+          embed.className="pdfEmbed";
+          embed.type="application/pdf";
+          embed.src=dataUrlFromPdfBase64(c.pdfBase64);
+          viewer.appendChild(embed);
+        }
+        openNewTabBtn.style.display="inline-flex";
+        openNewTabBtn.onclick=()=>{
+          if(!c.pdfBase64) return;
+          const url=dataUrlFromPdfBase64(c.pdfBase64);
+          window.open(url,"_blank","noopener,noreferrer");
         };
-
-        if(pdfEnabled){
-          renderPdfToViewer(c.pdfBase64, viewer);
-        }
+      }else{
+        const d=document.createElement("div");d.className="text";d.textContent="Contenuto non riconosciuto";viewer.appendChild(d);
       }
-
       modal.classList.add("open");
     }
 
-    $("#modalClose").onclick = ()=> modal.classList.remove("open");
-    modal.addEventListener("click", (e)=>{ if(e.target===modal) modal.classList.remove("open"); });
+    document.getElementById("closeModalBtn").onclick=()=>modal.classList.remove("open");
+    modal.addEventListener("click",e=>{if(e.target===modal)modal.classList.remove("open");});
 
-    async function renderPdfToViewer(pdfBase64, mount){
-      if(!pdfEnabled) return;
+    function toYouTubeEmbed(url){
       try{
-        const buf = base64ToArrayBuffer(pdfBase64);
-        const loadingTask = PDFJS.getDocument({data: buf});
-        const pdf = await loadingTask.promise;
-
-        const wrap = document.createElement("div");
-        wrap.className = "pdfWrap";
-        mount.appendChild(wrap);
-
-        const maxW = Math.min(980, mount.clientWidth - 60);
-
-        for(let pageNum=1; pageNum<=pdf.numPages; pageNum++){
-          const page = await pdf.getPage(pageNum);
-          const viewport = page.getViewport({scale: 1});
-          const scale = maxW / viewport.width;
-          const vp = page.getViewport({scale});
-
-          const canvas = document.createElement("canvas");
-          canvas.width = Math.floor(vp.width);
-          canvas.height = Math.floor(vp.height);
-          const ctx = canvas.getContext("2d", {alpha:false});
-
-          await page.render({canvasContext: ctx, viewport: vp}).promise;
-
-          const box = document.createElement("div");
-          box.className = "pdfPage";
-          box.appendChild(canvas);
-          wrap.appendChild(box);
+        const u=new URL(url);
+        if(u.hostname.includes("youtu.be")){
+          const id=u.pathname.slice(1);
+          if(id) return "https://www.youtube.com/embed/"+id;
         }
-      }catch(err){
-        console.error(err);
-        const msg = document.createElement("div");
-        msg.className = "note";
-        msg.style.padding = "12px";
-        msg.textContent = "Errore nel rendering PDF. Puoi aprirlo in nuova scheda.";
-        mount.appendChild(msg);
-      }
+        if(u.hostname.includes("youtube.com")){
+          const v=u.searchParams.get("v");
+          if(v) return "https://www.youtube.com/embed/"+v;
+          if(u.pathname.startsWith("/shorts/")){
+            const id=u.pathname.split("/shorts/")[1].split(/[/?#]/)[0];
+            if(id) return "https://www.youtube.com/embed/"+id;
+          }
+        }
+      }catch(e){}
+      return null;
     }
 
-    // ---------- Create sources + AUTO-ADD card ----------
-    $("#imgFile").addEventListener("change", async (e)=>{
-      const file = e.target.files?.[0];
-      e.target.value = "";
-      if(!file) return;
+    async function fileToBase64(file){
+      return new Promise((resolve,reject)=>{
+        const r=new FileReader();
+        r.onload=()=>resolve(r.result);
+        r.onerror=reject;
+        r.readAsDataURL(file);
+      });
+    }
 
-      const dataUrl = await fileToBase64(file);
-      const s = { id: uid(), type:"image", title: file.name, desc:"Immagine", dataUrl };
-      sources.unshift(s);
+    async function fileToBase64Raw(file){
+      return new Promise((resolve,reject)=>{
+        const r=new FileReader();
+        r.onload=()=>{
+          const arr=new Uint8Array(r.result);
+          let bin="";for(let i=0;i<arr.length;i++)bin+=String.fromCharCode(arr[i]);
+          resolve(btoa(bin));
+        };
+        r.onerror=reject;
+        r.readAsArrayBuffer(file);
+      });
+    }
+
+    function addSourceAndCard(source){
+      state.sources.unshift(source);
       renderSources();
+      addCardFromSource(source.id);
+    }
 
-      addCardFromSource(s.id, null);
-      showToast("Immagine: card creata sul desk.");
-    });
-
-    $("#pdfFile").addEventListener("change", async (e)=>{
-      const file = e.target.files?.[0];
-      e.target.value = "";
-      if(!file) return;
-
-      const arrayBuf = await file.arrayBuffer();
-      const pdfBase64 = arrayBufferToBase64(arrayBuf);
-
-      let thumbDataUrl = null;
-      if(pdfEnabled){
-        try{
-          const pdf = await PDFJS.getDocument({data: arrayBuf}).promise;
-          const page = await pdf.getPage(1);
-          const vp1 = page.getViewport({scale: 0.35});
-          const canvas = document.createElement("canvas");
-          canvas.width = Math.floor(vp1.width);
-          canvas.height = Math.floor(vp1.height);
-          const ctx = canvas.getContext("2d", {alpha:false});
-          await page.render({canvasContext: ctx, viewport: vp1}).promise;
-          thumbDataUrl = canvas.toDataURL("image/jpeg", 0.82);
-        }catch(err){
-          console.warn("PDF thumb failed", err);
-        }
-      }
-
-      const s = { id: uid(), type:"pdf", title: file.name, desc:"PDF (multipagina)", fileName:file.name, pdfBase64, thumbDataUrl };
-      sources.unshift(s);
-      renderSources();
-
-      addCardFromSource(s.id, null);
-      showToast(pdfEnabled ? "PDF: card creata sul desk." : "PDF: card creata (anteprima disabilitata).");
-    });
-
-    $("#addTextBtn").addEventListener("click", ()=>{
-      const title = $("#textTitle").value.trim() || "Testo";
-      const txt = prompt("Incolla il testo (puoi anche scrivere tanto):");
-      if(txt === null) return;
-
-      const s = { id: uid(), type:"text", title, desc:"Testo", text: txt };
-      sources.unshift(s);
-      $("#textTitle").value = "";
-      renderSources();
-
-      addCardFromSource(s.id, null);
-      showToast("Testo: card creata sul desk.");
-    });
-
-    $("#addWebBtn").addEventListener("click", ()=>{
-      let url = $("#webUrl").value.trim();
-      if(!url){ showToast("Inserisci un URL."); return; }
-      if(!/^https?:\/\//i.test(url)) url = "https://" + url;
-      const s = { id: uid(), type:"web", title:"Web", desc:url, url };
-      sources.unshift(s);
-      $("#webUrl").value = "";
-      renderSources();
-
-      addCardFromSource(s.id, null);
-      showToast("Web: card creata sul desk.");
-    });
-
-    $("#addVideoBtn").addEventListener("click", ()=>{
-      let url = $("#videoUrl").value.trim();
-      if(!url){ showToast("Inserisci un URL."); return; }
-      if(!/^https?:\/\//i.test(url)) url = "https://" + url;
-      const s = { id: uid(), type:"video", title:"Video", desc:url, url };
-      sources.unshift(s);
-      $("#videoUrl").value = "";
-      renderSources();
-
-      addCardFromSource(s.id, null);
-      showToast("Video: card creata sul desk.");
-    });
-
-    // ---------- Export / Import ----------
-    $("#exportBtn").addEventListener("click", ()=>{
-      const payload = {
-        version: 2,
-        exportedAt: new Date().toISOString(),
-        cards: cards.map(c => ({...c})),
-        connectors: connectors.map(cn => ({...cn})),
-        view: {...view}
+    function addCardFromSource(sourceId){
+      const s=state.sources.find(x=>x.id===sourceId);
+      if(!s) return;
+      const rect=deskViewport.getBoundingClientRect();
+      const cx=(rect.left+rect.right)/2;
+      const cy=(rect.top+rect.bottom)/2;
+      const deskX=(cx-state.view.tx)/state.view.scale;
+      const deskY=(cy-state.view.ty)/state.view.scale;
+      const card={
+        id:uid(),
+        type:s.type,
+        title:s.title||s.type.toUpperCase(),
+        x:deskX-190,
+        y:deskY-120,
+        w:(s.type==="text"?340:360),
+        h:(s.type==="image"?260:(s.type==="pdf"?280:240))
       };
-      downloadText(`desk-export-${Date.now()}.json`, JSON.stringify(payload, null, 2));
-      showToast("Export JSON pronto.");
+      if(s.type==="image") card.dataUrl=s.dataUrl;
+      if(s.type==="text") card.text=s.text||"";
+      if(s.type==="web") card.url=s.url;
+      if(s.type==="video") card.url=s.url;
+      if(s.type==="pdf") card.pdfBase64=s.pdfBase64;
+      state.cards.push(card);
+      state.selectedCardId=card.id;
+      renderCards();
+      showToast("Card creata sul desk.");
+    }
+
+    // Input handlers
+    document.getElementById("imgFile").addEventListener("change",async e=>{
+      const file=e.target.files && e.target.files[0];
+      e.target.value="";
+      if(!file) return;
+      const dataUrl=await fileToBase64(file);
+      const src={id:uid(),type:"image",title:file.name,desc:"Immagine",dataUrl};
+      addSourceAndCard(src);
     });
 
-    $("#importFile").addEventListener("change", async (e)=>{
-      const file = e.target.files?.[0];
-      e.target.value = "";
+    document.getElementById("pdfFile").addEventListener("change",async e=>{
+      const file=e.target.files && e.target.files[0];
+      e.target.value="";
+      if(!file) return;
+      const b64=await fileToBase64Raw(file);
+      const src={id:uid(),type:"pdf",title:file.name,desc:"PDF",pdfBase64:b64};
+      addSourceAndCard(src);
+    });
+
+    document.getElementById("addWebBtn").addEventListener("click",()=>{
+      let url=document.getElementById("webUrl").value.trim();
+      if(!url){showToast("Inserisci un URL.");return;}
+      if(!/^https?:\/\//i.test(url)) url="https://"+url;
+      const src={id:uid(),type:"web",title:"Web",desc:url,url};
+      document.getElementById("webUrl").value="";
+      addSourceAndCard(src);
+    });
+
+    document.getElementById("addVideoBtn").addEventListener("click",()=>{
+      let url=document.getElementById("videoUrl").value.trim();
+      if(!url){showToast("Inserisci un URL video.");return;}
+      if(!/^https?:\/\//i.test(url)) url="https://"+url;
+      const src={id:uid(),type:"video",title:"Video",desc:url,url};
+      document.getElementById("videoUrl").value="";
+      addSourceAndCard(src);
+    });
+
+    document.getElementById("addTextBtn").addEventListener("click",()=>{
+      const t=document.getElementById("textTitle").value.trim()||"Testo";
+      const txt=window.prompt("Inserisci o incolla il testo della card:");
+      if(txt===null) return;
+      const src={id:uid(),type:"text",title:t,desc:"Testo",text:txt};
+      document.getElementById("textTitle").value="";
+      addSourceAndCard(src);
+    });
+
+    // Export / import JSON
+    function downloadJson(filename,data){
+      const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+      const a=document.createElement("a");
+      a.href=URL.createObjectURL(blob);
+      a.download=filename;
+      document.body.appendChild(a);
+      a.click();
+      URL.revokeObjectURL(a.href);
+      a.remove();
+    }
+
+    document.getElementById("exportBtn").addEventListener("click",()=>{
+      const payload={
+        version:1,
+        exportedAt:new Date().toISOString(),
+        cards:state.cards,
+        connectors:state.connectors,
+        view:state.view
+      };
+      downloadJson("desk-export-"+Date.now()+".json",payload);
+      showToast("Export JSON creato.");
+    });
+
+    document.getElementById("importFile").addEventListener("change",async e=>{
+      const file=e.target.files && e.target.files[0];
+      e.target.value="";
       if(!file) return;
       try{
-        const text = await file.text();
-        const payload = JSON.parse(text);
+        const text=await file.text();
+        const payload=JSON.parse(text);
         if(!payload || !Array.isArray(payload.cards)) throw new Error("Formato non valido");
-        cards.length = 0;
-        connectors.length = 0;
-        for(const c of payload.cards) cards.push(c);
-        for(const cn of (payload.connectors || [])) connectors.push(cn);
-        selectedCardId = null;
+        state.cards=payload.cards;
+        state.connectors=payload.connectors||[];
+        state.view=payload.view||state.view;
+        state.selectedCardId=null;
         renderCards();
+        applyTransform();
         showToast("Desk importato.");
       }catch(err){
         console.error(err);
-        showToast("Import fallito: file non valido.");
+        showToast("Import fallito (file non valido).");
       }
     });
 
-    // ---------- Buttons ----------
-    $("#clearDeskBtn").addEventListener("click", ()=>{ if(confirm("Vuoi svuotare il desk (card + connettori)?")) clearDesk(); });
-    $("#clearSourcesBtn").addEventListener("click", ()=>{ if(confirm("Vuoi svuotare il deposito fonti?")) clearSources(); });
-    $("#delAllConn").addEventListener("click", ()=>{ if(confirm("Cancellare tutti i connettori?")) deleteAllConnectors(); });
-    $("#resetView").addEventListener("click", resetView);
-
-    $("#modeSelect").addEventListener("click", ()=> setMode("select"));
-    $("#modePan").addEventListener("click", ()=> setMode("pan"));
-    $("#modeConnect").addEventListener("click", ()=> setMode("connect"));
-    $("#modeDelete").addEventListener("click", ()=> setMode("delete"));
-
-    // ---------- Self-tests (console) ----------
-    function runSelfTests(){
-      try{
-        console.assert(typeof uid() === "string" && uid().length > 10, "uid() dovrebbe generare una stringa non banale");
-        console.assert(getYouTubeEmbed("https://youtu.be/dQw4w9WgXcQ")?.includes("/embed/"), "getYouTubeEmbed(youtu.be)" );
-        console.assert(getYouTubeEmbed("https://www.youtube.com/watch?v=dQw4w9WgXcQ")?.includes("/embed/"), "getYouTubeEmbed(youtube.com?v=)" );
-        // pdfEnabled può essere false: l'importante è che non crashi.
-        console.assert(typeof pdfEnabled === "boolean", "pdfEnabled deve essere boolean" );
-      }catch(e){
-        console.warn("Self-tests: errore", e);
+    // Buttons
+    document.getElementById("clearDeskBtn").addEventListener("click",()=>{
+      if(confirm("Vuoi svuotare il desk?")) clearDesk();
+    });
+    document.getElementById("clearSourcesBtn").addEventListener("click",()=>{
+      if(confirm("Vuoi svuotare il deposito fonti?")) clearSources();
+    });
+    document.getElementById("clearConnBtn").addEventListener("click",()=>{
+      if(confirm("Vuoi cancellare tutti i connettori?")){
+        state.connectors=[];renderConnectors();showToast("Connettori cancellati.");
       }
-    }
+    });
+    document.getElementById("resetViewBtn").addEventListener("click",resetView);
 
-    // ---------- Init ----------
+    document.getElementById("modeMove").addEventListener("click",()=>setMode("move"));
+    document.getElementById("modePan").addEventListener("click",()=>setMode("pan"));
+    document.getElementById("modeConnect").addEventListener("click",()=>setMode("connect"));
+    document.getElementById("modeDelete").addEventListener("click",()=>setMode("delete"));
+
+    // Self-test minimi
+    (function selfTests(){
+      try{
+        console.assert(typeof uid()==="string","uid dovrebbe restituire una stringa");
+        console.assert(toYouTubeEmbed("https://youtu.be/dQw4w9WgXcQ"),"YouTube short link da riconoscere");
+      }catch(e){console.warn("Self test fallito",e);}
+    })();
+
+    // Init
     resetView();
     renderSources();
     renderCards();
-    setMode("select");
-    runSelfTests();
-
-    if(!pdfEnabled){
-      // Avviso soft: non blocca nulla.
-      showToast("Nota: PDF.js non caricato — i PDF si aprono comunque in nuova scheda.");
-    }
+    showToast("Desk pronto: aggiungi una fonte, la card appare sul desk e nel deposito.");
   </script>
 </body>
 </html>
