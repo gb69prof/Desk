@@ -1,1675 +1,803 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Interactive Desk — GitHub Pages</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ThinkDesk | AI Powered Workspace</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Base Setup */
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #f3f4f6; touch-action: none; font-family: 'Segoe UI', system-ui, sans-serif; }
+        
+        /* The Viewport */
+        #viewport { width: 100vw; height: 100vh; overflow: hidden; position: relative; cursor: grab; }
+        #viewport:active { cursor: grabbing; }
+        
+        /* The World (Transform Layer) */
+        #world { position: absolute; top: 0; left: 0; transform-origin: 0 0; will-change: transform; width: 0; height: 0; }
+        
+        /* SVG Connections Layer */
+        #connections-layer { position: absolute; overflow: visible; pointer-events: none; z-index: 0; }
+        
+        /* Cards */
+        .card {
+            position: absolute;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #e5e7eb;
+            transition: box-shadow 0.2s, border-color 0.2s;
+            user-select: none;
+            touch-action: none;
+            min-width: 150px;
+            min-height: 100px;
+            z-index: 10;
+        }
+        
+        .card.selected { border: 2px solid #3b82f6; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); z-index: 20; }
+        .card-header { height: 24px; background: #f9fafb; border-bottom: 1px solid #e5e7eb; border-radius: 8px 8px 0 0; cursor: move; display: flex; justify-content: flex-end; padding: 0 4px; align-items: center; }
+        .card-body { flex: 1; padding: 8px; overflow: hidden; position: relative; }
+        .card-resize { position: absolute; bottom: 0; right: 0; width: 20px; height: 20px; cursor: se-resize; background: linear-gradient(135deg, transparent 50%, #cbd5e1 50%); border-radius: 0 0 8px 0; }
+        
+        /* Content Types */
+        .content-text { width: 100%; height: 100%; outline: none; white-space: pre-wrap; overflow-y: auto; font-size: 14px; cursor: text; }
+        .content-img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+        .content-iframe { width: 100%; height: 100%; border: none; pointer-events: none; } /* No interaction in desk mode */
+        
+        /* Toolbar */
+        #toolbar {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);
+            padding: 8px 16px; border-radius: 16px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            display: flex; gap: 12px; z-index: 1000; border: 1px solid #e5e7eb; align-items: center;
+        }
+        
+        .tool-btn {
+            width: 44px; height: 44px; border-radius: 10px; border: none; background: transparent;
+            color: #4b5563; font-size: 20px; display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.2s; position: relative;
+        }
+        
+        .tool-btn:hover { background: #f3f4f6; color: #111827; }
+        .tool-btn.active { background: #eff6ff; color: #2563eb; }
+        
+        /* AI Button Special Style */
+        #btn-ai { color: #7c3aed; }
+        #btn-ai:hover { background: #f5f3ff; color: #6d28d9; }
+        #btn-ai.loading { animation: pulse 1.5s infinite; opacity: 0.7; pointer-events: none; }
+        
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(0.95); } 100% { transform: scale(1); } }
 
-  <!-- PDF.js (CDN) -->
-  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.7.76/build/pdf.min.js"></script>
-
-  <style>
-    :root{
-      --bg1:#0b1220;
-      --bg2:#111b31;
-      --panel: rgba(255,255,255,.08);
-      --panel2: rgba(255,255,255,.12);
-      --stroke: rgba(255,255,255,.14);
-      --text: rgba(255,255,255,.92);
-      --muted: rgba(255,255,255,.64);
-      --shadow: 0 12px 40px rgba(0,0,0,.45);
-      --radius: 18px;
-      --radius2: 22px;
-      --accent: #6ae4ff;
-      --danger: #ff5d6a;
-      --ok: #6cffb1;
-      --warn: #ffd36a;
-    }
-
-    *{ box-sizing:border-box; }
-    html,body{ height:100%; margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; color:var(--text); background: radial-gradient(1200px 800px at 15% 10%, #1b2a58 0%, transparent 55%),
-                                                                   radial-gradient(900px 650px at 75% 0%, #1a3b3b 0%, transparent 55%),
-                                                                   linear-gradient(160deg, var(--bg1), var(--bg2)); overflow:hidden; }
-
-    /* App layout */
-    .app{
-      height:100%;
-      display:grid;
-      grid-template-columns: 360px 1fr;
-      gap:14px;
-      padding:14px;
-      padding-bottom: max(14px, env(safe-area-inset-bottom));
-    }
-
-    @media (max-width: 900px){
-      .app{
-        grid-template-columns: 1fr;
-        grid-template-rows: auto 1fr;
-        overflow:hidden;
-      }
-      .left{ max-height: 44vh; }
-    }
-
-    .left, .main{
-      border:1px solid var(--stroke);
-      background: linear-gradient(180deg, var(--panel), rgba(255,255,255,.05));
-      border-radius: var(--radius2);
-      box-shadow: var(--shadow);
-      overflow:hidden;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-    }
-
-    .topbar{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      padding:12px 12px;
-      border-bottom:1px solid var(--stroke);
-      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
-    }
-
-    .brand{
-      display:flex; align-items:center; gap:10px;
-      font-weight:700;
-      letter-spacing:.2px;
-      white-space:nowrap;
-    }
-    .dot{
-      width:12px;height:12px;border-radius:999px;
-      background: radial-gradient(circle at 30% 30%, #fff, var(--accent));
-      box-shadow: 0 0 0 4px rgba(106,228,255,.15), 0 0 24px rgba(106,228,255,.28);
-    }
-    .sub{
-      font-size:12px; color:var(--muted); font-weight:500;
-    }
-
-    .toolbar{
-      display:flex; flex-wrap:wrap; gap:8px;
-      padding:10px 12px;
-      border-bottom:1px solid var(--stroke);
-      background: rgba(0,0,0,.12);
-    }
-
-    .btn{
-      appearance:none; border:1px solid var(--stroke);
-      background: rgba(255,255,255,.06);
-      color:var(--text);
-      padding:10px 10px;
-      border-radius: 14px;
-      font-weight:650;
-      font-size:13px;
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      cursor:pointer;
-      user-select:none;
-      touch-action: manipulation;
-      transition: transform .06s ease, background .2s ease, border-color .2s ease;
-    }
-    .btn:active{ transform: translateY(1px) scale(.99); }
-    .btn:hover{ background: rgba(255,255,255,.10); border-color: rgba(255,255,255,.22); }
-    .btn.small{ padding:8px 10px; font-size:12px; border-radius: 12px; }
-    .btn.primary{ border-color: rgba(106,228,255,.35); background: rgba(106,228,255,.14); }
-    .btn.primary:hover{ background: rgba(106,228,255,.20); }
-    .btn.danger{ border-color: rgba(255,93,106,.35); background: rgba(255,93,106,.12); }
-    .btn.danger:hover{ background: rgba(255,93,106,.18); }
-
-    .chip{
-      display:inline-flex; align-items:center; gap:8px;
-      padding:8px 10px;
-      border:1px solid var(--stroke);
-      background: rgba(255,255,255,.05);
-      border-radius:999px;
-      font-size:12px;
-      font-weight:650;
-      color:var(--muted);
-      user-select:none;
-    }
-    .chip strong{ color:var(--text); }
-
-    .seg{
-      display:flex; align-items:center; gap:8px; flex-wrap:wrap;
-    }
-    .mode{
-      display:flex; gap:6px; align-items:center;
-      padding:6px; border:1px solid var(--stroke);
-      border-radius: 14px; background: rgba(255,255,255,.05);
-    }
-    .mode .btn{ border-radius: 12px; padding:8px 10px; }
-    .mode .btn.active{
-      border-color: rgba(106,228,255,.5);
-      background: rgba(106,228,255,.18);
-      color: var(--text);
-    }
-
-    /* Left panel content */
-    .leftBody{
-      height: calc(100% - 54px);
-      display:flex;
-      flex-direction:column;
-      overflow:hidden;
-    }
-    .section{
-      padding:12px;
-      border-bottom:1px solid var(--stroke);
-    }
-    .section h3{
-      margin:0 0 10px 0;
-      font-size:13px; letter-spacing:.2px;
-      color: rgba(255,255,255,.84);
-    }
-
-    .row{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-    .row + .row{ margin-top:8px; }
-
-    .input{
-      flex:1;
-      min-width: 160px;
-      padding:10px 12px;
-      border-radius: 14px;
-      border:1px solid var(--stroke);
-      background: rgba(0,0,0,.18);
-      color: var(--text);
-      outline:none;
-      font-size:13px;
-    }
-    .input::placeholder{ color: rgba(255,255,255,.38); }
-
-    .color{
-      width:44px; height:40px;
-      border-radius: 14px;
-      border:1px solid var(--stroke);
-      background: rgba(0,0,0,.18);
-      padding:0;
-      overflow:hidden;
-    }
-    .color input{ width:100%; height:100%; border:0; padding:0; background:transparent; }
-
-    .sources{
-      padding:12px;
-      overflow:auto;
-      flex:1;
-    }
-    .sourceItem{
-      border:1px solid var(--stroke);
-      background: rgba(255,255,255,.06);
-      border-radius: 16px;
-      padding:10px;
-      display:grid;
-      grid-template-columns: 54px 1fr;
-      gap:10px;
-      margin-bottom:10px;
-    }
-    .thumb{
-      width:54px; height:54px;
-      border-radius: 14px;
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(0,0,0,.18);
-      overflow:hidden;
-      display:flex; align-items:center; justify-content:center;
-      color: rgba(255,255,255,.55);
-      font-weight:800;
-      font-size:12px;
-    }
-    .thumb img, .thumb canvas{ width:100%; height:100%; object-fit:cover; display:block; }
-    .meta{
-      display:flex;
-      flex-direction:column;
-      gap:8px;
-      min-width:0;
-    }
-    .meta .title{
-      font-size:13px;
-      font-weight:750;
-      overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-    }
-    .meta .type{
-      font-size:12px;
-      color: var(--muted);
-      overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-    }
-    .meta .actions{ display:flex; gap:8px; flex-wrap:wrap; }
-
-    .note{
-      font-size:12px;
-      color: rgba(255,255,255,.58);
-      line-height:1.35;
-    }
-
-    /* Main / desk */
-    .main{
-      display:flex;
-      flex-direction:column;
-      overflow:hidden;
-    }
-    .mainBody{
-      flex:1;
-      position:relative;
-      overflow:hidden;
-      background:
-        radial-gradient(circle at 40% 20%, rgba(106,228,255,.10), transparent 40%),
-        radial-gradient(circle at 80% 60%, rgba(108,255,177,.08), transparent 45%),
-        linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
-    }
-
-    .deskViewport{
-      position:absolute;
-      inset:0;
-      overflow:hidden;
-      touch-action: none; /* gesture custom */
-    }
-
-    .deskContent{
-      position:absolute;
-      left:0; top:0;
-      transform-origin: 0 0;
-      will-change: transform;
-    }
-
-    /* Grid effect */
-    .gridLayer{
-      position:absolute;
-      left:0; top:0;
-      width: 8000px; height: 8000px;
-      background-image:
-        linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(255,255,255,.06) 1px, transparent 1px);
-      background-size: 80px 80px;
-      opacity:.25;
-      pointer-events:none;
-    }
-    .gridLayer:after{
-      content:"";
-      position:absolute; inset:0;
-      background-image:
-        linear-gradient(to right, rgba(255,255,255,.08) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(255,255,255,.08) 1px, transparent 1px);
-      background-size: 16px 16px;
-      opacity:.22;
-      pointer-events:none;
-    }
-
-    .svgLayer{
-      position:absolute;
-      left:0; top:0;
-      width: 8000px; height: 8000px;
-      pointer-events:none;
-    }
-
-    /* Cards */
-    .card{
-      position:absolute;
-      border:1px solid rgba(255,255,255,.18);
-      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
-      border-radius: 18px;
-      box-shadow: 0 14px 40px rgba(0,0,0,.45);
-      overflow:hidden;
-      min-width: 180px;
-      min-height: 120px;
-      touch-action:none;
-      user-select:none;
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-    }
-    .card.selected{
-      border-color: rgba(106,228,255,.55);
-      box-shadow: 0 18px 55px rgba(0,0,0,.55), 0 0 0 3px rgba(106,228,255,.12);
-    }
-    .cardHeader{
-      height:38px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:8px;
-      padding:8px 10px;
-      border-bottom:1px solid rgba(255,255,255,.14);
-      background: rgba(0,0,0,.14);
-      cursor:grab;
-    }
-    .cardHeader:active{ cursor:grabbing; }
-    .cardHeader .lefty{
-      display:flex; align-items:center; gap:8px; min-width:0;
-    }
-    .badge{
-      font-size:11px;
-      font-weight:800;
-      letter-spacing:.5px;
-      color: rgba(255,255,255,.78);
-      background: rgba(255,255,255,.10);
-      border:1px solid rgba(255,255,255,.12);
-      padding:4px 8px;
-      border-radius:999px;
-      text-transform:uppercase;
-    }
-    .cardTitle{
-      font-weight:800;
-      font-size:12.5px;
-      color: rgba(255,255,255,.92);
-      overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-      max-width: 240px;
-    }
-    .cardBtns{ display:flex; gap:6px; }
-    .iconBtn{
-      width:30px; height:30px;
-      display:flex; align-items:center; justify-content:center;
-      border-radius: 10px;
-      border:1px solid rgba(255,255,255,.14);
-      background: rgba(255,255,255,.06);
-      cursor:pointer;
-    }
-    .iconBtn:hover{ background: rgba(255,255,255,.10); }
-    .iconBtn.danger:hover{ background: rgba(255,93,106,.15); border-color: rgba(255,93,106,.22); }
-
-    .cardBody{
-      height: calc(100% - 38px);
-      padding:10px;
-      overflow:hidden;
-      pointer-events:none; /* click handled by card container */
-    }
-    .preview{
-      width:100%;
-      height:100%;
-      border-radius: 14px;
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(0,0,0,.16);
-      overflow:hidden;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      color: rgba(255,255,255,.60);
-      font-size:12px;
-      text-align:center;
-      line-height:1.3;
-    }
-    .preview img, .preview video, .preview iframe, .preview canvas{
-      width:100%;
-      height:100%;
-      object-fit:cover;
-      border:0;
-      display:block;
-    }
-    .preview .snippet{
-      padding:10px;
-      text-align:left;
-      white-space:pre-wrap;
-      overflow:hidden;
-      display:-webkit-box;
-      -webkit-line-clamp: 6;
-      -webkit-box-orient: vertical;
-      color: rgba(255,255,255,.78);
-    }
-
-    .resizeHandle{
-      position:absolute;
-      right:8px;
-      bottom:8px;
-      width:16px;
-      height:16px;
-      border-radius: 6px;
-      border:1px solid rgba(255,255,255,.18);
-      background: rgba(255,255,255,.12);
-      cursor:nwse-resize;
-      touch-action:none;
-    }
-
-    /* Modal viewer */
-    .modal{
-      position:fixed;
-      inset:0;
-      background: rgba(0,0,0,.62);
-      display:none;
-      align-items:center;
-      justify-content:center;
-      padding: 14px;
-      z-index: 9999;
-    }
-    .modal.open{ display:flex; }
-    .modalBox{
-      width: min(1100px, 100%);
-      height: min(760px, 100%);
-      border-radius: 22px;
-      border:1px solid rgba(255,255,255,.18);
-      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
-      box-shadow: var(--shadow);
-      overflow:hidden;
-      display:flex;
-      flex-direction:column;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-    }
-    .modalTop{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      padding:10px 12px;
-      border-bottom:1px solid rgba(255,255,255,.14);
-      background: rgba(0,0,0,.16);
-    }
-    .modalTop .title{
-      font-weight:900;
-      overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-    }
-    .modalBody{
-      flex:1;
-      background: rgba(0,0,0,.14);
-      overflow:auto;
-      padding:12px;
-    }
-    .viewer{
-      width:100%;
-      min-height: 100%;
-      border-radius: 18px;
-      border:1px solid rgba(255,255,255,.14);
-      background: rgba(0,0,0,.18);
-      overflow:hidden;
-    }
-    .viewer iframe, .viewer video{
-      width:100%;
-      height: 620px;
-      border:0;
-      display:block;
-      background: #000;
-    }
-    .viewer img{
-      width:100%;
-      height:auto;
-      display:block;
-    }
-    .viewer .text{
-      padding:14px;
-      white-space:pre-wrap;
-      color: rgba(255,255,255,.88);
-      line-height:1.45;
-      font-size: 15px;
-    }
-    .pdfWrap{
-      padding:12px;
-    }
-    .pdfPage{
-      margin: 10px auto 16px auto;
-      display:block;
-      border-radius: 14px;
-      overflow:hidden;
-      border:1px solid rgba(255,255,255,.14);
-      background: rgba(0,0,0,.15);
-      max-width: 980px;
-    }
-    .pdfPage canvas{
-      width:100%;
-      height:auto;
-      display:block;
-    }
-
-    /* Connector lines */
-    .conn{
-      pointer-events: stroke;
-      cursor:pointer;
-    }
-
-    .toast{
-      position:absolute;
-      bottom:14px;
-      left:14px;
-      padding:10px 12px;
-      border-radius: 14px;
-      background: rgba(0,0,0,.42);
-      border:1px solid rgba(255,255,255,.16);
-      color: rgba(255,255,255,.85);
-      font-size:12px;
-      display:none;
-      max-width: 520px;
-      z-index: 40;
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-    }
-    .toast.show{ display:block; }
-
-    .kbd{
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono";
-      font-size:11px;
-      padding:2px 6px;
-      border-radius: 8px;
-      border:1px solid rgba(255,255,255,.14);
-      background: rgba(255,255,255,.08);
-      color: rgba(255,255,255,.78);
-    }
-
-    /* Hide default file input look */
-    input[type="file"]{ display:none; }
-  </style>
+        /* AI Popup */
+        #ai-popup {
+            position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+            background: white; width: 300px; padding: 16px; border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            z-index: 1001; display: none; flex-direction: column; gap: 10px; border: 1px solid #e5e7eb;
+        }
+        .ai-option-btn {
+            background: #f3f4f6; border: none; padding: 8px; border-radius: 6px; cursor: pointer; text-align: left; font-size: 14px; color: #374151; transition: background 0.2s;
+        }
+        .ai-option-btn:hover { background: #e5e7eb; }
+        .ai-input { width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 6px; margin-bottom: 8px; font-size: 14px; }
+        
+        /* Modal for expansion */
+        #modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 2000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
+        #modal-content { background: white; width: 90%; height: 90%; border-radius: 12px; overflow: hidden; position: relative; display: flex; flex-direction: column; }
+        #modal-close { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.1); border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; z-index: 10; font-weight: bold; }
+        
+        /* Helpers */
+        .hidden { display: none !important; }
+        
+        /* Grid Background pattern */
+        #grid-bg {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-size: 20px 20px; opacity: 0.5; pointer-events: none;
+        }
+    </style>
 </head>
-
 <body>
-  <div class="app">
-    <!-- LEFT: Sources / Import -->
-    <aside class="left">
-      <div class="topbar">
-        <div>
-          <div class="brand"><span class="dot"></span>Interactive Desk</div>
-          <div class="sub">Static — GitHub Pages ready</div>
+
+    <!-- Main Viewport -->
+    <div id="viewport">
+        <div id="grid-bg"></div>
+        <div id="world">
+            <svg id="connections-layer" width="1" height="1"></svg>
+            <!-- Cards go here -->
         </div>
-        <div class="chip"><strong id="counts">0</strong> card</div>
-      </div>
-
-      <div class="leftBody">
-        <div class="section">
-          <h3>Deposito fonti (vuoto all’avvio)</h3>
-
-          <div class="row">
-            <label class="btn small primary" for="imgFile">+ Immagine</label>
-            <input id="imgFile" type="file" accept="image/*" />
-            <label class="btn small primary" for="pdfFile">+ PDF</label>
-            <input id="pdfFile" type="file" accept="application/pdf" />
-          </div>
-
-          <div class="row">
-            <input id="textTitle" class="input" placeholder="Titolo testo (opzionale)" />
-            <button class="btn small primary" id="addTextBtn">+ Testo</button>
-          </div>
-
-          <div class="row">
-            <input id="webUrl" class="input" placeholder="URL pagina web (iframe se possibile)" />
-            <button class="btn small primary" id="addWebBtn">+ Web</button>
-          </div>
-
-          <div class="row">
-            <input id="videoUrl" class="input" placeholder="URL video (mp4 o YouTube)" />
-            <button class="btn small primary" id="addVideoBtn">+ Video</button>
-          </div>
-
-          <div class="row">
-            <div class="note">
-              Suggerimento: per web/video usa link “diretti”. Alcuni siti bloccano l’iframe: in quel caso apri dal viewer in una nuova scheda.
-            </div>
-          </div>
-        </div>
-
-        <div class="section">
-          <h3>Azioni (desk)</h3>
-          <div class="row">
-            <button class="btn small" id="exportBtn">Esporta JSON</button>
-            <label class="btn small" for="importFile">Importa JSON</label>
-            <input id="importFile" type="file" accept="application/json" />
-          </div>
-          <div class="row">
-            <button class="btn small danger" id="clearDeskBtn">Svuota desk</button>
-            <button class="btn small danger" id="clearSourcesBtn">Svuota fonti</button>
-          </div>
-        </div>
-
-        <div class="sources" id="sourcesList" aria-label="Fonti">
-          <!-- source items -->
-        </div>
-      </div>
-    </aside>
-
-    <!-- MAIN: Desk -->
-    <main class="main">
-      <div class="topbar">
-        <div class="seg">
-          <div class="mode" aria-label="Modalità">
-            <button class="btn small active" id="modeSelect">Muovi</button>
-            <button class="btn small" id="modePan">Pan</button>
-            <button class="btn small" id="modeConnect">Connetti</button>
-            <button class="btn small" id="modeDelete">Cancella</button>
-          </div>
-
-          <span class="chip">Zoom: <strong id="zoomPct">100%</strong></span>
-          <span class="chip">Suggerimento: pinch su iPad • wheel su desktop</span>
-        </div>
-
-        <div class="seg">
-          <div class="chip">
-            Connettori:
-            <span class="color" title="Colore connettori"><input id="connColor" type="color" value="#6ae4ff"></span>
-          </div>
-          <button class="btn small danger" id="delAllConn">Cancella connettori</button>
-          <button class="btn small" id="resetView">Reset vista</button>
-        </div>
-      </div>
-
-      <div class="toolbar">
-        <span class="chip">Tap su una card: <strong>apri</strong></span>
-        <span class="chip">Trascina header: <strong>sposta</strong></span>
-        <span class="chip">Angolo in basso: <strong>ridimensiona</strong></span>
-        <span class="chip">Modalità Connetti: <strong>clic 2 card</strong></span>
-        <span class="chip">Modalità Cancella: <strong>clic card/linea</strong></span>
-      </div>
-
-      <div class="mainBody">
-        <div class="deskViewport" id="deskViewport">
-          <div class="deskContent" id="deskContent">
-            <div class="gridLayer"></div>
-            <svg class="svgLayer" id="svgLayer" xmlns="http://www.w3.org/2000/svg"></svg>
-            <!-- cards injected here -->
-          </div>
-
-          <div class="toast" id="toast"></div>
-        </div>
-      </div>
-    </main>
-  </div>
-
-  <!-- Modal viewer -->
-  <div class="modal" id="modal">
-    <div class="modalBox">
-      <div class="modalTop">
-        <div class="title" id="modalTitle">Viewer</div>
-        <div class="seg">
-          <button class="btn small" id="modalOpenNewTab" style="display:none;">Apri in nuova scheda</button>
-          <button class="btn small danger" id="modalClose">Chiudi</button>
-        </div>
-      </div>
-      <div class="modalBody">
-        <div class="viewer" id="viewer"></div>
-      </div>
     </div>
-  </div>
 
-  <script>
-    // ---------- PDF.js setup ----------
-    // pdfjsLib is global from CDN
-    pdfjsLib.GlobalWorkerOptions.workerSrc =
-      "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.7.76/build/pdf.worker.min.js";
+    <!-- Toolbar -->
+    <div id="toolbar">
+        <button class="tool-btn" id="btn-text" title="Aggiungi Testo">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>
+        </button>
+        <button class="tool-btn" id="btn-img" title="Aggiungi Immagine">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+        </button>
+        <button class="tool-btn" id="btn-web" title="Aggiungi Sito/Embed">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        </button>
+        
+        <!-- AI BUTTON -->
+        <button class="tool-btn" id="btn-ai" title="Magic AI ✨">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+        </button>
 
-    // ---------- Utilities ----------
-    const $ = (sel, el=document) => el.querySelector(sel);
-    const $$ = (sel, el=document) => Array.from(el.querySelectorAll(sel));
-    const uid = () => Math.random().toString(16).slice(2) + Date.now().toString(16);
+        <div class="w-px h-8 bg-gray-300 mx-1 self-center"></div>
+        <button class="tool-btn" id="btn-connect" title="Modalità Connetti">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        </button>
+        <button class="tool-btn" id="btn-delete-mode" title="Modalità Elimina">
+             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        </button>
+        <div class="w-px h-8 bg-gray-300 mx-1 self-center"></div>
+        <button class="tool-btn" id="btn-save" title="Salva LocalStorage">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        </button>
+        <button class="tool-btn" id="btn-export" title="Esporta JSON">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </button>
+        <button class="tool-btn" id="btn-import" title="Importa JSON" onclick="document.getElementById('file-input').click()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        </button>
+        <input type="file" id="file-input" class="hidden" accept=".json">
+        <button class="tool-btn text-red-500" id="btn-clear" title="Svuota Desk">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+    </div>
 
-    function showToast(msg){
-      const t = $("#toast");
-      t.textContent = msg;
-      t.classList.add("show");
-      clearTimeout(showToast._tm);
-      showToast._tm = setTimeout(()=> t.classList.remove("show"), 2200);
-    }
+    <!-- AI Popup Menu -->
+    <div id="ai-popup">
+        <h3 class="font-bold text-gray-700 text-sm mb-2">✨ Gemini AI Tools</h3>
+        
+        <!-- Section: No Card Selected (Brainstorming) -->
+        <div id="ai-brainstorm-section">
+            <p class="text-xs text-gray-500 mb-2">Genera idee su un argomento:</p>
+            <input type="text" id="ai-topic-input" class="ai-input" placeholder="Es: Piani marketing 2024...">
+            <button class="ai-option-btn w-full bg-indigo-50 text-indigo-700 font-medium" onclick="runBrainstorm()">🚀 Genera Idee (Brainstorming)</button>
+        </div>
 
-    function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
+        <!-- Section: Text Card Selected -->
+        <div id="ai-text-section" class="hidden">
+            <p class="text-xs text-gray-500 mb-2">Modifica la card selezionata:</p>
+            <div class="flex flex-col gap-1">
+                <button class="ai-option-btn" onclick="runTextAI('expand')">📝 Espandi contenuto</button>
+                <button class="ai-option-btn" onclick="runTextAI('summarize')">🤏 Riassumi (Bullet points)</button>
+                <button class="ai-option-btn" onclick="runTextAI('professional')">👔 Riscrivi Professional</button>
+            </div>
+        </div>
+        
+        <div id="ai-loading" class="hidden text-center py-2 text-indigo-600 text-sm">
+            ✨ Gemini sta pensando...
+        </div>
+    </div>
 
-    function screenToDesk(pt){
-      // pt: {x,y} in viewport coords
-      return {
-        x: (pt.x - view.tx) / view.scale,
-        y: (pt.y - view.ty) / view.scale
-      };
-    }
-    function deskToScreen(pt){
-      return {
-        x: pt.x * view.scale + view.tx,
-        y: pt.y * view.scale + view.ty
-      };
-    }
+    <!-- Expansion Modal -->
+    <div id="modal-overlay">
+        <div id="modal-content">
+            <button id="modal-close">X</button>
+            <div id="modal-body" class="w-full h-full p-4 overflow-auto"></div>
+        </div>
+    </div>
 
-    function getYouTubeEmbed(url){
-      try{
-        const u = new URL(url);
-        if(u.hostname.includes("youtu.be")){
-          const id = u.pathname.replace("/","");
-          return `https://www.youtube.com/embed/${id}`;
-        }
-        if(u.hostname.includes("youtube.com")){
-          const id = u.searchParams.get("v");
-          if(id) return `https://www.youtube.com/embed/${id}`;
-          // shorts
-          if(u.pathname.startsWith("/shorts/")){
-            const id2 = u.pathname.split("/shorts/")[1].split(/[/?#]/)[0];
-            return `https://www.youtube.com/embed/${id2}`;
-          }
-        }
-      }catch(e){}
-      return null;
-    }
+    <script>
+        // --- Gemini Configuration ---
+        const apiKey = ""; // Injected by environment
+        const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
 
-    function isLikelyMp4(url){
-      return /\.mp4(\?.*)?$/i.test(url);
-    }
+        async function callGemini(prompt, systemInstruction = "Sei un assistente creativo utile.") {
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+                systemInstruction: { parts: [{ text: systemInstruction }] }
+            };
 
-    function downloadText(filename, text){
-      const blob = new Blob([text], {type:"application/json"});
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      URL.revokeObjectURL(a.href);
-      a.remove();
-    }
-
-    function fileToBase64(file){
-      return new Promise((resolve, reject)=>{
-        const r = new FileReader();
-        r.onload = ()=> resolve(r.result);
-        r.onerror = reject;
-        r.readAsDataURL(file);
-      });
-    }
-
-    function arrayBufferToBase64(buf){
-      const bytes = new Uint8Array(buf);
-      let bin = "";
-      for(let i=0;i<bytes.length;i++) bin += String.fromCharCode(bytes[i]);
-      return btoa(bin);
-    }
-
-    function base64ToArrayBuffer(b64){
-      const bin = atob(b64);
-      const len = bin.length;
-      const bytes = new Uint8Array(len);
-      for(let i=0;i<len;i++) bytes[i] = bin.charCodeAt(i);
-      return bytes.buffer;
-    }
-
-    // ---------- State ----------
-    const sources = [];     // deposit
-    const cards = [];       // desk cards
-    const connectors = [];  // {id, a:cardId, b:cardId, color}
-    let selectedCardId = null;
-
-    const view = {
-      scale: 1,
-      tx: 60,  // screen px
-      ty: 60
-    };
-
-    const app = {
-      mode: "select", // select | pan | connect | delete
-      connectFirst: null,
-      pointers: new Map(), // for pinch / pan
-      pinch: null
-    };
-
-    const deskViewport = $("#deskViewport");
-    const deskContent  = $("#deskContent");
-    const svgLayer     = $("#svgLayer");
-    const sourcesList  = $("#sourcesList");
-
-    function updateCounts(){
-      $("#counts").textContent = cards.length;
-    }
-
-    function setMode(mode){
-      app.mode = mode;
-      app.connectFirst = null;
-      ["modeSelect","modePan","modeConnect","modeDelete"].forEach(id => $("#"+id).classList.remove("active"));
-      if(mode==="select") $("#modeSelect").classList.add("active");
-      if(mode==="pan") $("#modePan").classList.add("active");
-      if(mode==="connect") $("#modeConnect").classList.add("active");
-      if(mode==="delete") $("#modeDelete").classList.add("active");
-
-      if(mode==="connect") showToast("Connetti: tocca 2 card per creare una linea.");
-      if(mode==="delete")  showToast("Cancella: tocca una card o una linea.");
-      if(mode==="pan")     showToast("Pan: trascina lo sfondo (o usa due dita).");
-      if(mode==="select")  showToast("Muovi: trascina le card (header).");
-    }
-
-    function applyTransform(){
-      deskContent.style.transform = `translate(${view.tx}px, ${view.ty}px) scale(${view.scale})`;
-      $("#zoomPct").textContent = Math.round(view.scale*100) + "%";
-    }
-
-    function resetView(){
-      view.scale = 1;
-      view.tx = 60;
-      view.ty = 60;
-      applyTransform();
-    }
-
-    // ---------- Rendering ----------
-    function renderSources(){
-      sourcesList.innerHTML = "";
-      if(sources.length === 0){
-        const empty = document.createElement("div");
-        empty.className = "note";
-        empty.style.padding = "10px 2px";
-        empty.textContent = "Nessuna fonte nel deposito. Aggiungi immagini, PDF, testo, web o video qui sopra.";
-        sourcesList.appendChild(empty);
-        return;
-      }
-
-      for(const s of sources){
-        const wrap = document.createElement("div");
-        wrap.className = "sourceItem";
-        wrap.dataset.id = s.id;
-
-        const t = document.createElement("div");
-        t.className = "thumb";
-
-        // thumbnails
-        if(s.type === "image"){
-          const img = new Image();
-          img.src = s.dataUrl;
-          t.appendChild(img);
-        }else if(s.type === "pdf" && s.thumbDataUrl){
-          const img = new Image();
-          img.src = s.thumbDataUrl;
-          t.appendChild(img);
-        }else{
-          t.textContent = s.type.toUpperCase();
+            try {
+                const response = await fetch(GEMINI_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!response.ok) throw new Error("API Error");
+                
+                const data = await response.json();
+                return data.candidates?.[0]?.content?.parts?.[0]?.text || "Errore nella generazione.";
+            } catch (error) {
+                console.error(error);
+                alert("Errore di connessione a Gemini AI. Riprova.");
+                return null;
+            }
         }
 
-        const meta = document.createElement("div");
-        meta.className = "meta";
-
-        const title = document.createElement("div");
-        title.className = "title";
-        title.textContent = s.title || "Senza titolo";
-
-        const type = document.createElement("div");
-        type.className = "type";
-        type.textContent = s.desc || s.type;
-
-        const actions = document.createElement("div");
-        actions.className = "actions";
-
-        const add = document.createElement("button");
-        add.className = "btn small primary";
-        add.textContent = "Aggiungi al desk";
-        add.onclick = ()=> addCardFromSource(s.id);
-
-        const del = document.createElement("button");
-        del.className = "btn small danger";
-        del.textContent = "Rimuovi";
-        del.onclick = ()=> {
-          const idx = sources.findIndex(x=>x.id===s.id);
-          if(idx>=0) sources.splice(idx,1);
-          renderSources();
+        // --- State Management ---
+        const state = {
+            pan: { x: 0, y: 0 },
+            scale: 1,
+            mode: 'move', // move, connect, delete
+            isDragging: false,
+            isPanning: false,
+            startPan: { x: 0, y: 0 },
+            cards: [],
+            connections: [],
+            nextId: 1,
+            selectedCard: null,
+            connectSource: null
         };
 
-        actions.appendChild(add);
-        actions.appendChild(del);
+        const DOM = {
+            viewport: document.getElementById('viewport'),
+            world: document.getElementById('world'),
+            svgLayer: document.getElementById('connections-layer'),
+            grid: document.getElementById('grid-bg'),
+            btns: document.querySelectorAll('.tool-btn'),
+            aiPopup: document.getElementById('ai-popup'),
+            aiBtn: document.getElementById('btn-ai')
+        };
 
-        meta.appendChild(title);
-        meta.appendChild(type);
-        meta.appendChild(actions);
+        // --- Core: Infinite Desk Logic ---
 
-        wrap.appendChild(t);
-        wrap.appendChild(meta);
-
-        sourcesList.appendChild(wrap);
-      }
-    }
-
-    function renderCards(){
-      // Remove existing card nodes (keep grid & svg)
-      $$(".card", deskContent).forEach(n => n.remove());
-
-      for(const c of cards){
-        const el = document.createElement("div");
-        el.className = "card";
-        if(c.id === selectedCardId) el.classList.add("selected");
-        el.dataset.id = c.id;
-        el.style.left = c.x + "px";
-        el.style.top  = c.y + "px";
-        el.style.width  = c.w + "px";
-        el.style.height = c.h + "px";
-
-        // Header
-        const header = document.createElement("div");
-        header.className = "cardHeader";
-
-        const lefty = document.createElement("div");
-        lefty.className = "lefty";
-
-        const badge = document.createElement("div");
-        badge.className = "badge";
-        badge.textContent = c.type;
-
-        const title = document.createElement("div");
-        title.className = "cardTitle";
-        title.textContent = c.title || c.type.toUpperCase();
-
-        lefty.appendChild(badge);
-        lefty.appendChild(title);
-
-        const btns = document.createElement("div");
-        btns.className = "cardBtns";
-
-        const openBtn = document.createElement("div");
-        openBtn.className = "iconBtn";
-        openBtn.title = "Apri";
-        openBtn.innerHTML = "↗";
-        openBtn.onclick = (e)=> { e.stopPropagation(); openCard(c.id); };
-
-        const delBtn = document.createElement("div");
-        delBtn.className = "iconBtn danger";
-        delBtn.title = "Elimina";
-        delBtn.innerHTML = "✕";
-        delBtn.onclick = (e)=> { e.stopPropagation(); deleteCard(c.id); };
-
-        btns.appendChild(openBtn);
-        btns.appendChild(delBtn);
-
-        header.appendChild(lefty);
-        header.appendChild(btns);
-
-        // Body
-        const body = document.createElement("div");
-        body.className = "cardBody";
-        const prev = document.createElement("div");
-        prev.className = "preview";
-
-        if(c.type === "image"){
-          const img = new Image();
-          img.src = c.dataUrl;
-          prev.appendChild(img);
-        }else if(c.type === "text"){
-          const sn = document.createElement("div");
-          sn.className = "snippet";
-          sn.textContent = c.text || "";
-          prev.appendChild(sn);
-        }else if(c.type === "pdf"){
-          if(c.thumbDataUrl){
-            const img = new Image();
-            img.src = c.thumbDataUrl;
-            prev.appendChild(img);
-          }else{
-            prev.textContent = "PDF";
-          }
-        }else if(c.type === "web"){
-          prev.innerHTML = `<div style="padding:12px;">
-              <div style="font-weight:900; margin-bottom:6px;">🌐 Pagina web</div>
-              <div style="color:rgba(255,255,255,.7); font-size:12px; word-break:break-word;">${escapeHtml(c.url)}</div>
-              <div style="color:rgba(255,255,255,.55); font-size:12px; margin-top:10px;">Apri per navigare</div>
-            </div>`;
-        }else if(c.type === "video"){
-          prev.innerHTML = `<div style="padding:12px;">
-              <div style="font-weight:900; margin-bottom:6px;">▶ Video</div>
-              <div style="color:rgba(255,255,255,.7); font-size:12px; word-break:break-word;">${escapeHtml(c.url)}</div>
-              <div style="color:rgba(255,255,255,.55); font-size:12px; margin-top:10px;">Apri per avviare</div>
-            </div>`;
-        }else{
-          prev.textContent = "Contenuto";
+        function updateTransform() {
+            DOM.world.style.transform = `translate(${state.pan.x}px, ${state.pan.y}px) scale(${state.scale})`;
+            DOM.grid.style.backgroundPosition = `${state.pan.x}px ${state.pan.y}px`;
+            DOM.grid.style.backgroundSize = `${20 * state.scale}px ${20 * state.scale}px`;
         }
 
-        body.appendChild(prev);
+        DOM.viewport.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            if (e.ctrlKey || e.metaKey) {
+                const zoomIntensity = 0.1;
+                const delta = -Math.sign(e.deltaY) * zoomIntensity;
+                const oldScale = state.scale;
+                let newScale = Math.min(Math.max(0.1, state.scale + delta), 5);
+                
+                const rect = DOM.viewport.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+                
+                const worldX = (mouseX - state.pan.x) / oldScale;
+                const worldY = (mouseY - state.pan.y) / oldScale;
+                
+                state.pan.x = mouseX - worldX * newScale;
+                state.pan.y = mouseY - worldY * newScale;
+                state.scale = newScale;
+            } else {
+                state.pan.x -= e.deltaX;
+                state.pan.y -= e.deltaY;
+            }
+            updateTransform();
+        }, { passive: false });
 
-        const handle = document.createElement("div");
-        handle.className = "resizeHandle";
-        handle.title = "Ridimensiona";
+        DOM.viewport.addEventListener('pointerdown', (e) => {
+            // Close AI popup if clicking outside
+            if (!DOM.aiPopup.contains(e.target) && e.target !== DOM.aiBtn && !DOM.aiBtn.contains(e.target)) {
+                DOM.aiPopup.style.display = 'none';
+                DOM.aiBtn.classList.remove('active');
+            }
 
-        el.appendChild(header);
-        el.appendChild(body);
-        el.appendChild(handle);
+            // Deselect card if clicking background
+            if (e.target === DOM.viewport || e.target === DOM.grid || e.target.id === 'connections-layer') {
+                if(state.selectedCard) {
+                    const el = document.getElementById(`card-${state.selectedCard}`);
+                    if(el) el.classList.remove('selected');
+                    state.selectedCard = null;
+                }
+            }
 
-        // Interactions
-        el.addEventListener("pointerdown", (e)=> onCardPointerDown(e, c.id, header, handle));
-        el.addEventListener("click", (e)=> {
-          // avoid click when dragging or pressing buttons
-          if(e.defaultPrevented) return;
-          if(app.mode === "delete"){
-            deleteCard(c.id);
-            return;
-          }
-          if(app.mode === "connect"){
-            connectClick(c.id);
-            return;
-          }
-          // normal open on tap/click (but not if clicking header buttons)
-          if(e.target.classList.contains("iconBtn")) return;
-          openCard(c.id);
+            if (e.target !== DOM.viewport && e.target !== DOM.grid && e.target.id !== 'connections-layer') return;
+            state.isPanning = true;
+            state.startPan = { x: e.clientX - state.pan.x, y: e.clientY - state.pan.y };
+            DOM.viewport.setPointerCapture(e.pointerId);
         });
 
-        deskContent.appendChild(el);
-      }
-
-      updateCounts();
-      renderConnectors();
-    }
-
-    function renderConnectors(){
-      // svg covers 8000x8000 desk space
-      svgLayer.setAttribute("viewBox", "0 0 8000 8000");
-      svgLayer.innerHTML = "";
-
-      for(const cn of connectors){
-        const a = cards.find(x=>x.id===cn.a);
-        const b = cards.find(x=>x.id===cn.b);
-        if(!a || !b) continue;
-
-        const ax = a.x + a.w/2;
-        const ay = a.y + a.h/2;
-        const bx = b.x + b.w/2;
-        const by = b.y + b.h/2;
-
-        const dx = Math.abs(bx-ax);
-        const dy = Math.abs(by-ay);
-        const c1x = ax + (bx>ax ? dx*0.35 : -dx*0.35);
-        const c1y = ay;
-        const c2x = bx - (bx>ax ? dx*0.35 : -dx*0.35);
-        const c2y = by;
-
-        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        const d = `M ${ax} ${ay} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${bx} ${by}`;
-        path.setAttribute("d", d);
-        path.setAttribute("fill", "none");
-        path.setAttribute("stroke", cn.color || "#6ae4ff");
-        path.setAttribute("stroke-width", "6");
-        path.setAttribute("stroke-linecap", "round");
-        path.setAttribute("opacity", "0.95");
-        path.classList.add("conn");
-        path.style.pointerEvents = "stroke";
-        path.addEventListener("click", (e)=>{
-          e.stopPropagation();
-          if(app.mode === "delete"){
-            const idx = connectors.findIndex(x=>x.id===cn.id);
-            if(idx>=0) connectors.splice(idx,1);
-            renderConnectors();
-          }else{
-            showToast("Linea: passa a 'Cancella' per rimuoverla.");
-          }
+        DOM.viewport.addEventListener('pointermove', (e) => {
+            if (!state.isPanning) return;
+            state.pan.x = e.clientX - state.startPan.x;
+            state.pan.y = e.clientY - state.startPan.y;
+            updateTransform();
         });
 
-        // add a subtle glow stroke behind
-        const glow = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        glow.setAttribute("d", d);
-        glow.setAttribute("fill", "none");
-        glow.setAttribute("stroke", cn.color || "#6ae4ff");
-        glow.setAttribute("stroke-width", "14");
-        glow.setAttribute("stroke-linecap", "round");
-        glow.setAttribute("opacity", "0.12");
-        glow.style.pointerEvents = "none";
+        DOM.viewport.addEventListener('pointerup', (e) => {
+            state.isPanning = false;
+            DOM.viewport.releasePointerCapture(e.pointerId);
+        });
 
-        svgLayer.appendChild(glow);
-        svgLayer.appendChild(path);
-      }
-    }
+        // --- Card Management ---
 
-    function escapeHtml(str){
-      return (str || "").replace(/[&<>"']/g, (m)=>({
-        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
-      }[m]));
-    }
+        function createCard(type, content = null, x = null, y = null, w = 200, h = 150, id = null) {
+            const cardId = id || state.nextId++;
+            
+            if (x === null) {
+                const rect = DOM.viewport.getBoundingClientRect();
+                x = (-state.pan.x + (rect.width / 2)) / state.scale - (w / 2);
+                y = (-state.pan.y + (rect.height / 2)) / state.scale - (h / 2);
+            }
 
-    // ---------- Card operations ----------
-    function addCardFromSource(sourceId){
-      const s = sources.find(x=>x.id===sourceId);
-      if(!s) return;
+            const cardEl = document.createElement('div');
+            cardEl.className = 'card';
+            cardEl.id = `card-${cardId}`;
+            cardEl.style.left = `${x}px`;
+            cardEl.style.top = `${y}px`;
+            cardEl.style.width = `${w}px`;
+            cardEl.style.height = `${h}px`;
+            cardEl.dataset.id = cardId;
 
-      const center = screenToDesk({x: deskViewport.clientWidth/2, y: deskViewport.clientHeight/2});
-      const card = {
-        id: uid(),
-        type: s.type,
-        title: s.title || s.type.toUpperCase(),
-        x: clamp(center.x - 180, 0, 7600),
-        y: clamp(center.y - 120, 0, 7600),
-        w: (s.type==="text") ? 340 : 360,
-        h: (s.type==="image") ? 260 : (s.type==="pdf" ? 300 : 240),
-      };
+            const cardData = { id: cardId, type, content, x, y, w, h };
+            state.cards.push(cardData);
 
-      if(s.type==="image"){
-        card.dataUrl = s.dataUrl;
-      }else if(s.type==="pdf"){
-        card.pdfBase64 = s.pdfBase64;  // raw PDF bytes base64
-        card.fileName = s.fileName || "documento.pdf";
-        card.thumbDataUrl = s.thumbDataUrl || null;
-      }else if(s.type==="text"){
-        card.text = s.text || "";
-      }else if(s.type==="web"){
-        card.url = s.url;
-      }else if(s.type==="video"){
-        card.url = s.url;
-      }
+            const header = document.createElement('div');
+            header.className = 'card-header';
+            
+            const expandBtn = document.createElement('div');
+            expandBtn.innerHTML = '⤢';
+            expandBtn.style.cursor = 'pointer';
+            expandBtn.style.marginRight = 'auto';
+            expandBtn.style.padding = '0 5px';
+            expandBtn.title = "Espandi";
+            expandBtn.onclick = (e) => { e.stopPropagation(); openModal(cardData); };
+            
+            header.appendChild(expandBtn);
+            cardEl.appendChild(header);
 
-      cards.push(card);
-      selectedCardId = card.id;
-      renderCards();
-      showToast("Aggiunto al desk.");
-    }
+            const body = document.createElement('div');
+            body.className = 'card-body';
+            
+            if (type === 'text') {
+                const textarea = document.createElement('div');
+                textarea.className = 'content-text';
+                textarea.contentEditable = true;
+                textarea.innerText = content || 'Nuova nota...';
+                textarea.addEventListener('pointerdown', (e) => e.stopPropagation());
+                textarea.addEventListener('input', () => { cardData.content = textarea.innerText; });
+                body.appendChild(textarea);
+            } else if (type === 'img') {
+                const img = document.createElement('img');
+                img.className = 'content-img';
+                img.src = content || 'https://via.placeholder.com/300';
+                img.onerror = () => { img.src = 'https://via.placeholder.com/300?text=Error'; };
+                body.appendChild(img);
+            } else if (type === 'web') {
+                const iframe = document.createElement('iframe');
+                iframe.className = 'content-iframe';
+                iframe.src = content || 'about:blank';
+                const overlay = document.createElement('div');
+                overlay.style.position = 'absolute';
+                overlay.style.inset = '0';
+                body.appendChild(iframe);
+                body.appendChild(overlay);
+            }
 
-    function deleteCard(cardId){
-      // remove connectors attached
-      for(let i=connectors.length-1;i>=0;i--){
-        if(connectors[i].a===cardId || connectors[i].b===cardId) connectors.splice(i,1);
-      }
-      const idx = cards.findIndex(x=>x.id===cardId);
-      if(idx>=0) cards.splice(idx,1);
-      if(selectedCardId === cardId) selectedCardId = null;
-      renderCards();
-      showToast("Card eliminata.");
-    }
+            const resizeHandle = document.createElement('div');
+            resizeHandle.className = 'card-resize';
+            body.appendChild(resizeHandle);
+            
+            cardEl.appendChild(body);
+            DOM.world.appendChild(cardEl);
 
-    function clearDesk(){
-      cards.length = 0;
-      connectors.length = 0;
-      selectedCardId = null;
-      renderCards();
-      showToast("Desk svuotato.");
-    }
+            // Card Selection Logic (for AI)
+            cardEl.addEventListener('pointerdown', (e) => {
+                // Select logic
+                if (state.selectedCard && state.selectedCard !== cardId) {
+                    document.getElementById(`card-${state.selectedCard}`).classList.remove('selected');
+                }
+                state.selectedCard = cardId;
+                cardEl.classList.add('selected');
+                
+                // If AI popup is open, refresh it to show relevant options
+                if(DOM.aiPopup.style.display === 'flex') {
+                    showAIOptions();
+                }
 
-    function clearSources(){
-      sources.length = 0;
-      renderSources();
-      showToast("Fonti svuotate.");
-    }
+                if(state.mode === 'delete') {
+                    deleteCard(cardId);
+                    return;
+                }
+                if(state.mode === 'connect') {
+                    handleConnectionStart(cardId, cardEl);
+                    return;
+                }
 
-    // ---------- Connect mode ----------
-    function connectClick(cardId){
-      if(!app.connectFirst){
-        app.connectFirst = cardId;
-        selectedCardId = cardId;
-        renderCards();
-        showToast("Ora tocca la seconda card…");
-        return;
-      }
-      if(app.connectFirst === cardId){
-        showToast("Scegli una card diversa.");
-        return;
-      }
-      // create connector
-      const exists = connectors.some(cn =>
-        (cn.a===app.connectFirst && cn.b===cardId) || (cn.a===cardId && cn.b===app.connectFirst)
-      );
-      if(exists){
-        showToast("Connettore già presente.");
-        app.connectFirst = null;
-        return;
-      }
-      connectors.push({
-        id: uid(),
-        a: app.connectFirst,
-        b: cardId,
-        color: $("#connColor").value
-      });
-      app.connectFirst = null;
-      renderConnectors();
-      showToast("Connettore creato.");
-    }
+                e.stopPropagation();
+                cardEl.setPointerCapture(e.pointerId);
+                const startX = e.clientX;
+                const startY = e.clientY;
+                const initialLeft = parseFloat(cardEl.style.left);
+                const initialTop = parseFloat(cardEl.style.top);
 
-    function deleteAllConnectors(){
-      connectors.length = 0;
-      renderConnectors();
-      showToast("Connettori cancellati.");
-    }
+                const onMove = (moveEvent) => {
+                    const dx = (moveEvent.clientX - startX) / state.scale;
+                    const dy = (moveEvent.clientY - startY) / state.scale;
+                    
+                    const newX = initialLeft + dx;
+                    const newY = initialTop + dy;
+                    
+                    cardEl.style.left = `${newX}px`;
+                    cardEl.style.top = `${newY}px`;
+                    
+                    cardData.x = newX;
+                    cardData.y = newY;
+                    
+                    updateConnections();
+                };
 
-    // ---------- Drag / Resize on cards ----------
-    let drag = null;
+                const onUp = () => {
+                    cardEl.removeEventListener('pointermove', onMove);
+                    cardEl.removeEventListener('pointerup', onUp);
+                    cardEl.releasePointerCapture(e.pointerId);
+                };
 
-    function onCardPointerDown(e, cardId, headerEl, handleEl){
-      // avoid actions when clicking header buttons
-      if(e.target.classList.contains("iconBtn")) return;
+                cardEl.addEventListener('pointermove', onMove);
+                cardEl.addEventListener('pointerup', onUp);
+            });
 
-      const c = cards.find(x=>x.id===cardId);
-      if(!c) return;
+            resizeHandle.addEventListener('pointerdown', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                resizeHandle.setPointerCapture(e.pointerId);
+                
+                const startX = e.clientX;
+                const startY = e.clientY;
+                const startW = parseFloat(cardEl.style.width);
+                const startH = parseFloat(cardEl.style.height);
 
-      // In delete mode: handled by click
-      if(app.mode === "delete") return;
-      if(app.mode === "connect") return;
+                const onResize = (moveEvent) => {
+                    const dx = (moveEvent.clientX - startX) / state.scale;
+                    const dy = (moveEvent.clientY - startY) / state.scale;
+                    
+                    const newW = Math.max(100, startW + dx);
+                    const newH = Math.max(80, startH + dy);
+                    
+                    cardEl.style.width = `${newW}px`;
+                    cardEl.style.height = `${newH}px`;
+                    
+                    cardData.w = newW;
+                    cardData.h = newH;
+                    updateConnections();
+                };
 
-      selectedCardId = cardId;
-      renderCards();
+                const onUp = () => {
+                    resizeHandle.removeEventListener('pointermove', onResize);
+                    resizeHandle.removeEventListener('pointerup', onUp);
+                    resizeHandle.releasePointerCapture(e.pointerId);
+                };
 
-      const isResize = (e.target === handleEl);
-      const isMove = (headerEl.contains(e.target)) && app.mode === "select";
-      if(!(isResize || isMove)) return;
+                resizeHandle.addEventListener('pointermove', onResize);
+                resizeHandle.addEventListener('pointerup', onUp);
+            });
+            
+            cardEl.addEventListener('click', (e) => {
+                if(state.mode === 'delete') {
+                    e.stopPropagation();
+                    deleteCard(cardId);
+                }
+            });
 
-      e.preventDefault();
-      e.stopPropagation();
-
-      const startScreen = {x:e.clientX, y:e.clientY};
-      const startDesk = screenToDesk(startScreen);
-
-      drag = {
-        cardId,
-        kind: isResize ? "resize" : "move",
-        startX: c.x, startY: c.y,
-        startW: c.w, startH: c.h,
-        startDeskX: startDesk.x,
-        startDeskY: startDesk.y
-      };
-
-      e.currentTarget.setPointerCapture(e.pointerId);
-
-      const onMove = (ev)=>{
-        if(!drag) return;
-        ev.preventDefault();
-        const nowDesk = screenToDesk({x:ev.clientX, y:ev.clientY});
-        const dx = nowDesk.x - drag.startDeskX;
-        const dy = nowDesk.y - drag.startDeskY;
-
-        if(drag.kind === "move"){
-          c.x = clamp(drag.startX + dx, 0, 8000 - 60);
-          c.y = clamp(drag.startY + dy, 0, 8000 - 60);
-        }else{
-          c.w = clamp(drag.startW + dx, 180, 900);
-          c.h = clamp(drag.startH + dy, 120, 780);
+            return cardData;
         }
-        const el = $(`.card[data-id="${cardId}"]`, deskContent);
-        if(el){
-          el.style.left = c.x + "px";
-          el.style.top = c.y + "px";
-          el.style.width = c.w + "px";
-          el.style.height = c.h + "px";
+
+        function deleteCard(id) {
+            const el = document.getElementById(`card-${id}`);
+            if (el) el.remove();
+            state.cards = state.cards.filter(c => c.id !== id);
+            state.connections = state.connections.filter(c => c.from !== id && c.to !== id);
+            if(state.selectedCard === id) state.selectedCard = null;
+            renderConnections();
         }
-        renderConnectors();
-      };
 
-      const onUp = (ev)=>{
-        if(!drag) return;
-        try{ e.currentTarget.releasePointerCapture(e.pointerId); }catch(_){}
-        drag = null;
-        window.removeEventListener("pointermove", onMove);
-        window.removeEventListener("pointerup", onUp);
-      };
+        // --- Connection Logic ---
 
-      window.addEventListener("pointermove", onMove, {passive:false});
-      window.addEventListener("pointerup", onUp, {passive:false});
-    }
+        function handleConnectionStart(cardId, cardEl) {
+            if (state.connectSource === null) {
+                state.connectSource = cardId;
+                cardEl.classList.add('selected');
+            } else {
+                if (state.connectSource !== cardId) {
+                    addConnection(state.connectSource, cardId);
+                }
+                const prev = document.getElementById(`card-${state.connectSource}`);
+                if (prev) prev.classList.remove('selected');
+                state.connectSource = null;
+            }
+        }
 
-    // ---------- Desk pan / zoom ----------
-    deskViewport.addEventListener("pointerdown", (e)=>{
-      // ignore if clicking on a card
-      if(e.target.closest(".card")) return;
+        function addConnection(fromId, toId) {
+            const exists = state.connections.find(c => 
+                (c.from === fromId && c.to === toId) || (c.from === toId && c.to === fromId)
+            );
+            if (!exists) {
+                state.connections.push({ from: fromId, to: toId, color: '#94a3b8' });
+                renderConnections();
+            }
+        }
 
-      // Track pointers for pinch
-      deskViewport.setPointerCapture(e.pointerId);
-      app.pointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
-      if(app.pointers.size === 2){
-        const pts = Array.from(app.pointers.values());
-        const dist = Math.hypot(pts[1].x-pts[0].x, pts[1].y-pts[0].y);
-        const mid  = {x:(pts[0].x+pts[1].x)/2, y:(pts[0].y+pts[1].y)/2};
-        app.pinch = {
-          startDist: dist,
-          startScale: view.scale,
-          startTx: view.tx,
-          startTy: view.ty,
-          mid
+        function renderConnections() {
+            DOM.svgLayer.innerHTML = '';
+            DOM.svgLayer.style.overflow = 'visible'; 
+
+            state.connections.forEach((conn, index) => {
+                const c1 = state.cards.find(c => c.id === conn.from);
+                const c2 = state.cards.find(c => c.id === conn.to);
+                if (!c1 || !c2) return;
+
+                const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                
+                const x1 = c1.x + c1.w / 2;
+                const y1 = c1.y + c1.h / 2;
+                const x2 = c2.x + c2.w / 2;
+                const y2 = c2.y + c2.h / 2;
+
+                line.setAttribute("x1", x1);
+                line.setAttribute("y1", y1);
+                line.setAttribute("x2", x2);
+                line.setAttribute("y2", y2);
+                line.setAttribute("stroke", conn.color);
+                line.setAttribute("stroke-width", "3");
+                line.style.pointerEvents = "visibleStroke";
+                line.style.cursor = "pointer";
+
+                line.addEventListener('click', (e) => {
+                    if (state.mode === 'delete') {
+                        e.stopPropagation();
+                        state.connections.splice(index, 1);
+                        renderConnections();
+                    }
+                });
+
+                DOM.svgLayer.appendChild(line);
+            });
+        }
+
+        function updateConnections() {
+            requestAnimationFrame(renderConnections);
+        }
+
+        // --- Toolbar Actions ---
+
+        function setMode(mode) {
+            state.mode = mode;
+            DOM.btns.forEach(b => b.classList.remove('active'));
+            if (mode === 'connect') document.getElementById('btn-connect').classList.add('active');
+            if (mode === 'delete') document.getElementById('btn-delete-mode').classList.add('active');
+            
+            DOM.viewport.style.cursor = mode === 'delete' ? 'crosshair' : 'grab';
+            
+            if (mode !== 'connect' && state.connectSource) {
+                 const prev = document.getElementById(`card-${state.connectSource}`);
+                 if (prev) prev.classList.remove('selected');
+                 state.connectSource = null;
+            }
+        }
+
+        document.getElementById('btn-text').onclick = () => { setMode('move'); createCard('text'); };
+        
+        document.getElementById('btn-img').onclick = () => {
+            setMode('move');
+            const url = prompt("Inserisci URL immagine:", "https://images.unsplash.com/photo-1517849845537-4d257902454a?w=400");
+            if (url) createCard('img', url);
         };
-      }else{
-        // Single pointer pan if mode pan
-        if(app.mode === "pan"){
-          app.pinch = app.pinch || {};
-          app.pinch.panStart = {x:e.clientX, y:e.clientY, tx:view.tx, ty:view.ty};
-        }
-      }
-    }, {passive:false});
-
-    deskViewport.addEventListener("pointermove", (e)=>{
-      if(!app.pointers.has(e.pointerId)) return;
-
-      app.pointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
-
-      // Pinch zoom (2 pointers)
-      if(app.pointers.size === 2 && app.pinch){
-        e.preventDefault();
-        const pts = Array.from(app.pointers.values());
-        const dist = Math.hypot(pts[1].x-pts[0].x, pts[1].y-pts[0].y);
-        const mid  = {x:(pts[0].x+pts[1].x)/2, y:(pts[0].y+pts[1].y)/2};
-
-        const factor = dist / app.pinch.startDist;
-        const newScale = clamp(app.pinch.startScale * factor, 0.35, 2.5);
-
-        // zoom around midpoint
-        // Keep desk point under mid stable
-        const before = screenToDesk(mid);
-        view.scale = newScale;
-        const after = screenToDesk(mid);
-        view.tx += (after.x - before.x) * view.scale;
-        view.ty += (after.y - before.y) * view.scale;
-
-        applyTransform();
-        return;
-      }
-
-      // Pan (single pointer) only in pan mode
-      if(app.mode === "pan" && app.pinch && app.pinch.panStart){
-        e.preventDefault();
-        const p0 = app.pinch.panStart;
-        const dx = e.clientX - p0.x;
-        const dy = e.clientY - p0.y;
-        view.tx = p0.tx + dx;
-        view.ty = p0.ty + dy;
-        applyTransform();
-      }
-    }, {passive:false});
-
-    deskViewport.addEventListener("pointerup", (e)=>{
-      app.pointers.delete(e.pointerId);
-      if(app.pointers.size < 2) app.pinch = null;
-    });
-
-    deskViewport.addEventListener("pointercancel", (e)=>{
-      app.pointers.delete(e.pointerId);
-      if(app.pointers.size < 2) app.pinch = null;
-    });
-
-    // wheel zoom for desktop
-    deskViewport.addEventListener("wheel", (e)=>{
-      e.preventDefault();
-      const delta = -e.deltaY;
-      const zoom = delta > 0 ? 1.08 : 0.92;
-
-      const mouse = {x:e.clientX, y:e.clientY};
-      const before = screenToDesk(mouse);
-
-      view.scale = clamp(view.scale * zoom, 0.35, 2.5);
-
-      const after = screenToDesk(mouse);
-      // shift to keep point stable
-      view.tx += (after.x - before.x) * view.scale;
-      view.ty += (after.y - before.y) * view.scale;
-
-      applyTransform();
-    }, {passive:false});
-
-    // Click on background
-    deskViewport.addEventListener("click", (e)=>{
-      if(e.target.closest(".card")) return;
-      if(app.mode === "connect"){
-        app.connectFirst = null;
-        showToast("Selezione connettore annullata.");
-      }
-      selectedCardId = null;
-      renderCards();
-    });
-
-    // ---------- Viewer ----------
-    const modal = $("#modal");
-    const viewer = $("#viewer");
-
-    function openCard(cardId){
-      const c = cards.find(x=>x.id===cardId);
-      if(!c) return;
-
-      $("#modalTitle").textContent = c.title || c.type.toUpperCase();
-      viewer.innerHTML = "";
-      $("#modalOpenNewTab").style.display = "none";
-      $("#modalOpenNewTab").onclick = null;
-
-      if(c.type === "image"){
-        const img = new Image();
-        img.src = c.dataUrl;
-        viewer.appendChild(img);
-      }
-      else if(c.type === "text"){
-        const d = document.createElement("div");
-        d.className = "text";
-        d.textContent = c.text || "";
-        viewer.appendChild(d);
-      }
-      else if(c.type === "web"){
-        const url = c.url;
-        const wrap = document.createElement("div");
-        wrap.innerHTML = `<iframe sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
-                           referrerpolicy="no-referrer"
-                           src="${escapeHtml(url)}"></iframe>`;
-        viewer.appendChild(wrap.firstChild);
-
-        $("#modalOpenNewTab").style.display = "inline-flex";
-        $("#modalOpenNewTab").onclick = ()=> window.open(url, "_blank", "noopener,noreferrer");
-      }
-      else if(c.type === "video"){
-        const url = c.url;
-        const yt = getYouTubeEmbed(url);
-        if(yt){
-          const iframe = document.createElement("iframe");
-          iframe.src = yt;
-          iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
-          iframe.allowFullscreen = true;
-          viewer.appendChild(iframe);
-        }else if(isLikelyMp4(url)){
-          const v = document.createElement("video");
-          v.src = url;
-          v.controls = true;
-          v.playsInline = true;
-          viewer.appendChild(v);
-        }else{
-          // fallback: try iframe
-          const iframe = document.createElement("iframe");
-          iframe.src = url;
-          iframe.allow = "autoplay; encrypted-media; fullscreen";
-          iframe.allowFullscreen = true;
-          viewer.appendChild(iframe);
-
-          $("#modalOpenNewTab").style.display = "inline-flex";
-          $("#modalOpenNewTab").onclick = ()=> window.open(url, "_blank", "noopener,noreferrer");
-        }
-      }
-      else if(c.type === "pdf"){
-        const wrap = document.createElement("div");
-        wrap.className = "pdfWrap";
-        wrap.innerHTML = `<div class="note" style="padding:6px 2px 10px 2px;">
-          PDF multipagina: scroll verticale. Se il tuo iPad apre il PDF in viewer esterno, usa “Apri in nuova scheda”.
-        </div>`;
-        viewer.appendChild(wrap);
-
-        $("#modalOpenNewTab").style.display = "inline-flex";
-        $("#modalOpenNewTab").onclick = ()=>{
-          // If from base64, open blob in new tab
-          const buf = base64ToArrayBuffer(c.pdfBase64);
-          const blob = new Blob([buf], {type:"application/pdf"});
-          const urlObj = URL.createObjectURL(blob);
-          window.open(urlObj, "_blank", "noopener,noreferrer");
-          setTimeout(()=> URL.revokeObjectURL(urlObj), 8000);
+        
+        document.getElementById('btn-web').onclick = () => {
+            setMode('move');
+            const url = prompt("Inserisci URL pagina o Video Embed:", "https://www.wikipedia.org");
+            if (url) createCard('web', url);
         };
 
-        renderPdfToViewer(c.pdfBase64, viewer);
-      }
+        document.getElementById('btn-connect').onclick = () => {
+            setMode(state.mode === 'connect' ? 'move' : 'connect');
+        };
 
-      modal.classList.add("open");
-    }
+        document.getElementById('btn-delete-mode').onclick = () => {
+            setMode(state.mode === 'delete' ? 'move' : 'delete');
+        };
 
-    $("#modalClose").onclick = ()=> modal.classList.remove("open");
-    modal.addEventListener("click", (e)=>{ if(e.target===modal) modal.classList.remove("open"); });
+        document.getElementById('btn-clear').onclick = () => {
+            if(confirm("Vuoi davvero svuotare il desk?")) {
+                DOM.world.innerHTML = '<svg id="connections-layer" width="1" height="1"></svg>';
+                DOM.svgLayer = document.getElementById('connections-layer');
+                state.cards = [];
+                state.connections = [];
+                state.pan = {x: 0, y: 0};
+                state.scale = 1;
+                updateTransform();
+            }
+        };
 
-    async function renderPdfToViewer(pdfBase64, mount){
-      try{
-        const buf = base64ToArrayBuffer(pdfBase64);
-        const loadingTask = pdfjsLib.getDocument({data: buf});
-        const pdf = await loadingTask.promise;
+        // --- AI Logic ---
+        
+        DOM.aiBtn.onclick = (e) => {
+            e.stopPropagation();
+            const isOpen = DOM.aiPopup.style.display === 'flex';
+            if(isOpen) {
+                DOM.aiPopup.style.display = 'none';
+                DOM.aiBtn.classList.remove('active');
+            } else {
+                DOM.aiPopup.style.display = 'flex';
+                DOM.aiBtn.classList.add('active');
+                showAIOptions();
+            }
+        };
 
-        const wrap = document.createElement("div");
-        wrap.className = "pdfWrap";
-        mount.appendChild(wrap);
-
-        for(let pageNum=1; pageNum<=pdf.numPages; pageNum++){
-          const page = await pdf.getPage(pageNum);
-
-          // choose scale based on page width vs container
-          const viewport = page.getViewport({scale: 1});
-          const maxW = Math.min(980, mount.clientWidth - 60);
-          const scale = maxW / viewport.width;
-
-          const vp = page.getViewport({scale: scale});
-          const canvas = document.createElement("canvas");
-          canvas.width = Math.floor(vp.width);
-          canvas.height = Math.floor(vp.height);
-
-          const ctx = canvas.getContext("2d", {alpha:false});
-          await page.render({canvasContext: ctx, viewport: vp}).promise;
-
-          const box = document.createElement("div");
-          box.className = "pdfPage";
-          box.appendChild(canvas);
-          wrap.appendChild(box);
-        }
-      }catch(err){
-        console.error(err);
-        const msg = document.createElement("div");
-        msg.className = "note";
-        msg.style.padding = "12px";
-        msg.textContent = "Errore nel rendering PDF. Puoi comunque aprirlo in nuova scheda dal pulsante in alto.";
-        mount.appendChild(msg);
-      }
-    }
-
-    // ---------- Import sources ----------
-    $("#imgFile").addEventListener("change", async (e)=>{
-      const file = e.target.files?.[0];
-      e.target.value = "";
-      if(!file) return;
-      const dataUrl = await fileToBase64(file);
-
-      sources.push({
-        id: uid(),
-        type: "image",
-        title: file.name,
-        desc: "Immagine",
-        dataUrl
-      });
-
-      renderSources();
-      showToast("Immagine aggiunta alle fonti.");
-    });
-
-    $("#pdfFile").addEventListener("change", async (e)=>{
-      const file = e.target.files?.[0];
-      e.target.value = "";
-      if(!file) return;
-
-      const arrayBuf = await file.arrayBuffer();
-      const pdfBase64 = arrayBufferToBase64(arrayBuf);
-
-      // Create a thumbnail (first page) using pdf.js
-      let thumbDataUrl = null;
-      try{
-        const pdf = await pdfjsLib.getDocument({data: arrayBuf}).promise;
-        const page = await pdf.getPage(1);
-        const vp1 = page.getViewport({scale: 0.35});
-        const canvas = document.createElement("canvas");
-        canvas.width = Math.floor(vp1.width);
-        canvas.height = Math.floor(vp1.height);
-        const ctx = canvas.getContext("2d", {alpha:false});
-        await page.render({canvasContext: ctx, viewport: vp1}).promise;
-        thumbDataUrl = canvas.toDataURL("image/jpeg", 0.82);
-      }catch(err){
-        console.warn("PDF thumb failed", err);
-      }
-
-      sources.push({
-        id: uid(),
-        type: "pdf",
-        title: file.name,
-        desc: "PDF (multipagina)",
-        fileName: file.name,
-        pdfBase64,
-        thumbDataUrl
-      });
-
-      renderSources();
-      showToast("PDF aggiunto alle fonti.");
-    });
-
-    $("#addTextBtn").addEventListener("click", ()=>{
-      const title = $("#textTitle").value.trim() || "Testo";
-      const txt = prompt("Incolla il testo (puoi anche scrivere tanto):");
-      if(txt === null) return;
-
-      sources.push({
-        id: uid(),
-        type: "text",
-        title,
-        desc: "Testo",
-        text: txt
-      });
-
-      $("#textTitle").value = "";
-      renderSources();
-      showToast("Testo aggiunto alle fonti.");
-    });
-
-    $("#addWebBtn").addEventListener("click", ()=>{
-      const url = $("#webUrl").value.trim();
-      if(!url){ showToast("Inserisci un URL."); return; }
-      sources.push({
-        id: uid(),
-        type: "web",
-        title: "Web",
-        desc: url,
-        url
-      });
-      $("#webUrl").value = "";
-      renderSources();
-      showToast("Pagina web aggiunta alle fonti.");
-    });
-
-    $("#addVideoBtn").addEventListener("click", ()=>{
-      const url = $("#videoUrl").value.trim();
-      if(!url){ showToast("Inserisci un URL."); return; }
-      sources.push({
-        id: uid(),
-        type: "video",
-        title: "Video",
-        desc: url,
-        url
-      });
-      $("#videoUrl").value = "";
-      renderSources();
-      showToast("Video aggiunto alle fonti.");
-    });
-
-    // ---------- Export / Import desk ----------
-    $("#exportBtn").addEventListener("click", ()=>{
-      const payload = {
-        version: 1,
-        exportedAt: new Date().toISOString(),
-        cards: cards.map(c => ({...c})),
-        connectors: connectors.map(cn => ({...cn})),
-        // view not auto-restored (desk must open empty), but included for convenience
-        view: {...view}
-      };
-      downloadText(`desk-export-${Date.now()}.json`, JSON.stringify(payload, null, 2));
-      showToast("Export JSON pronto.");
-    });
-
-    $("#importFile").addEventListener("change", async (e)=>{
-      const file = e.target.files?.[0];
-      e.target.value = "";
-      if(!file) return;
-      try{
-        const text = await file.text();
-        const payload = JSON.parse(text);
-
-        if(!payload || !Array.isArray(payload.cards)) throw new Error("Formato non valido.");
-
-        // Replace current desk (but still: app opens empty by default; this is explicit load)
-        cards.length = 0;
-        connectors.length = 0;
-
-        for(const c of payload.cards){
-          cards.push(c);
-        }
-        for(const cn of (payload.connectors || [])){
-          connectors.push(cn);
+        function showAIOptions() {
+            const brainDiv = document.getElementById('ai-brainstorm-section');
+            const textDiv = document.getElementById('ai-text-section');
+            
+            // Check if a text card is selected
+            const selectedCardObj = state.cards.find(c => c.id === state.selectedCard);
+            
+            if (selectedCardObj && selectedCardObj.type === 'text') {
+                brainDiv.classList.add('hidden');
+                textDiv.classList.remove('hidden');
+            } else {
+                brainDiv.classList.remove('hidden');
+                textDiv.classList.add('hidden');
+            }
         }
 
-        selectedCardId = null;
-        renderCards();
-        showToast("Desk importato.");
-      }catch(err){
-        console.error(err);
-        showToast("Import fallito: file non valido.");
-      }
-    });
+        async function runBrainstorm() {
+            const topic = document.getElementById('ai-topic-input').value;
+            if (!topic) return alert("Inserisci un argomento!");
 
-    // ---------- Buttons ----------
-    $("#clearDeskBtn").addEventListener("click", ()=>{
-      if(confirm("Vuoi svuotare il desk (card + connettori)?")) clearDesk();
-    });
-    $("#clearSourcesBtn").addEventListener("click", ()=>{
-      if(confirm("Vuoi svuotare il deposito fonti?")) clearSources();
-    });
+            setAILoading(true);
+            
+            const prompt = `Generate 5 distinct, creative ideas about "${topic}". Return strictly a JSON array of strings, like ["Idea 1", "Idea 2", "Idea 3"]. No markdown formatting.`;
+            
+            const result = await callGemini(prompt, "You are a creative brainstorming assistant. Output strictly JSON.");
+            
+            if (result) {
+                try {
+                    // Cleanup potential markdown fences
+                    const cleanResult = result.replace(/```json/g, '').replace(/```/g, '').trim();
+                    const ideas = JSON.parse(cleanResult);
+                    
+                    // Center of viewport
+                    const rect = DOM.viewport.getBoundingClientRect();
+                    const centerX = (-state.pan.x + (rect.width / 2)) / state.scale;
+                    const centerY = (-state.pan.y + (rect.height / 2)) / state.scale;
 
-    $("#delAllConn").addEventListener("click", ()=>{
-      if(confirm("Cancellare tutti i connettori?")) deleteAllConnectors();
-    });
+                    // Arrange in a circle
+                    const radius = 250;
+                    ideas.forEach((idea, i) => {
+                        const angle = (i / ideas.length) * Math.PI * 2;
+                        const x = centerX + Math.cos(angle) * radius - 100; // -100 is half width
+                        const y = centerY + Math.sin(angle) * radius - 75;  // -75 is half height
+                        createCard('text', idea, x, y);
+                    });
+                } catch (e) {
+                    console.error("Parsing error", e);
+                    alert("Errore nell'interpretare la risposta AI.");
+                }
+            }
+            
+            setAILoading(false);
+            DOM.aiPopup.style.display = 'none';
+        }
 
-    $("#resetView").addEventListener("click", resetView);
+        async function runTextAI(mode) {
+            const card = state.cards.find(c => c.id === state.selectedCard);
+            if (!card) return;
 
-    $("#modeSelect").addEventListener("click", ()=> setMode("select"));
-    $("#modePan").addEventListener("click", ()=> setMode("pan"));
-    $("#modeConnect").addEventListener("click", ()=> setMode("connect"));
-    $("#modeDelete").addEventListener("click", ()=> setMode("delete"));
+            setAILoading(true);
+            
+            let prompt = "";
+            if (mode === 'expand') prompt = `Expand on this text, adding more detail and context, keep it under 100 words: "${card.content}"`;
+            if (mode === 'summarize') prompt = `Summarize this text into 3 key bullet points: "${card.content}"`;
+            if (mode === 'professional') prompt = `Rewrite this text to be more professional, polite, and corporate: "${card.content}"`;
 
-    // ---------- Init ----------
-    // Open always clean: no auto-load.
-    resetView();
-    renderSources();
-    renderCards();
-    setMode("select");
-  </script>
+            const result = await callGemini(prompt);
+            
+            if (result) {
+                card.content = result;
+                // Update DOM
+                const el = document.getElementById(`card-${card.id}`);
+                const textEl = el.querySelector('.content-text');
+                if (textEl) textEl.innerText = result;
+            }
+
+            setAILoading(false);
+            DOM.aiPopup.style.display = 'none';
+        }
+
+        function setAILoading(isLoading) {
+            const loading = document.getElementById('ai-loading');
+            const sections = [document.getElementById('ai-brainstorm-section'), document.getElementById('ai-text-section')];
+            
+            if (isLoading) {
+                DOM.aiBtn.classList.add('loading');
+                loading.classList.remove('hidden');
+                sections.forEach(s => s.classList.add('hidden'));
+            } else {
+                DOM.aiBtn.classList.remove('loading');
+                loading.classList.add('hidden');
+                // View will be reset by logic or popup close
+            }
+        }
+
+        // --- Persistence ---
+
+        document.getElementById('btn-save').onclick = () => {
+            const data = JSON.stringify({ cards: state.cards, connections: state.connections });
+            localStorage.setItem('thinkdesk_save', data);
+            alert("Desk salvato nel browser!");
+        };
+
+        function loadFromJSON(jsonStr) {
+            try {
+                const data = JSON.parse(jsonStr);
+                DOM.world.innerHTML = '<svg id="connections-layer" width="1" height="1"></svg>';
+                DOM.svgLayer = document.getElementById('connections-layer');
+                state.cards = [];
+                state.connections = [];
+                data.cards.forEach(c => createCard(c.type, c.content, c.x, c.y, c.w, c.h, c.id));
+                if(data.cards.length > 0) state.nextId = Math.max(...data.cards.map(c => c.id)) + 1;
+                state.connections = data.connections || [];
+                renderConnections();
+            } catch (e) {
+                alert("Errore caricamento file.");
+                console.error(e);
+            }
+        }
+
+        const saved = localStorage.getItem('thinkdesk_save');
+        if (saved) loadFromJSON(saved);
+
+        document.getElementById('btn-export').onclick = () => {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ cards: state.cards, connections: state.connections }));
+            const anchor = document.createElement('a');
+            anchor.setAttribute("href", dataStr);
+            anchor.setAttribute("download", "desk.json");
+            document.body.appendChild(anchor);
+            anchor.click();
+            anchor.remove();
+        };
+
+        document.getElementById('file-input').onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => loadFromJSON(ev.target.result);
+            reader.readAsText(file);
+        };
+
+        // --- Modal / Expand ---
+        const modal = document.getElementById('modal-overlay');
+        const modalBody = document.getElementById('modal-body');
+        
+        function openModal(cardData) {
+            modal.style.display = 'flex';
+            modalBody.innerHTML = '';
+            
+            if (cardData.type === 'text') {
+                const p = document.createElement('p');
+                p.style.whiteSpace = 'pre-wrap';
+                p.style.fontSize = '1.2rem';
+                p.style.lineHeight = '1.6';
+                p.innerText = cardData.content;
+                modalBody.appendChild(p);
+            } else if (cardData.type === 'img') {
+                const img = document.createElement('img');
+                img.src = cardData.content;
+                img.style.maxWidth = '100%';
+                img.style.maxHeight = '100%';
+                img.style.display = 'block';
+                img.style.margin = 'auto';
+                modalBody.appendChild(img);
+            } else if (cardData.type === 'web') {
+                const iframe = document.createElement('iframe');
+                iframe.src = cardData.content;
+                iframe.style.width = '100%';
+                iframe.style.height = '100%';
+                iframe.style.border = 'none';
+                modalBody.appendChild(iframe);
+            }
+        }
+        
+        document.getElementById('modal-close').onclick = () => { modal.style.display = 'none'; };
+        modal.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; };
+
+    </script>
 </body>
 </html>
