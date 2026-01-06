@@ -1,0 +1,1675 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Interactive Desk — GitHub Pages</title>
+
+  <!-- PDF.js (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.7.76/build/pdf.min.js"></script>
+
+  <style>
+    :root{
+      --bg1:#0b1220;
+      --bg2:#111b31;
+      --panel: rgba(255,255,255,.08);
+      --panel2: rgba(255,255,255,.12);
+      --stroke: rgba(255,255,255,.14);
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.64);
+      --shadow: 0 12px 40px rgba(0,0,0,.45);
+      --radius: 18px;
+      --radius2: 22px;
+      --accent: #6ae4ff;
+      --danger: #ff5d6a;
+      --ok: #6cffb1;
+      --warn: #ffd36a;
+    }
+
+    *{ box-sizing:border-box; }
+    html,body{ height:100%; margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; color:var(--text); background: radial-gradient(1200px 800px at 15% 10%, #1b2a58 0%, transparent 55%),
+                                                                   radial-gradient(900px 650px at 75% 0%, #1a3b3b 0%, transparent 55%),
+                                                                   linear-gradient(160deg, var(--bg1), var(--bg2)); overflow:hidden; }
+
+    /* App layout */
+    .app{
+      height:100%;
+      display:grid;
+      grid-template-columns: 360px 1fr;
+      gap:14px;
+      padding:14px;
+      padding-bottom: max(14px, env(safe-area-inset-bottom));
+    }
+
+    @media (max-width: 900px){
+      .app{
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr;
+        overflow:hidden;
+      }
+      .left{ max-height: 44vh; }
+    }
+
+    .left, .main{
+      border:1px solid var(--stroke);
+      background: linear-gradient(180deg, var(--panel), rgba(255,255,255,.05));
+      border-radius: var(--radius2);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:12px 12px;
+      border-bottom:1px solid var(--stroke);
+      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
+    }
+
+    .brand{
+      display:flex; align-items:center; gap:10px;
+      font-weight:700;
+      letter-spacing:.2px;
+      white-space:nowrap;
+    }
+    .dot{
+      width:12px;height:12px;border-radius:999px;
+      background: radial-gradient(circle at 30% 30%, #fff, var(--accent));
+      box-shadow: 0 0 0 4px rgba(106,228,255,.15), 0 0 24px rgba(106,228,255,.28);
+    }
+    .sub{
+      font-size:12px; color:var(--muted); font-weight:500;
+    }
+
+    .toolbar{
+      display:flex; flex-wrap:wrap; gap:8px;
+      padding:10px 12px;
+      border-bottom:1px solid var(--stroke);
+      background: rgba(0,0,0,.12);
+    }
+
+    .btn{
+      appearance:none; border:1px solid var(--stroke);
+      background: rgba(255,255,255,.06);
+      color:var(--text);
+      padding:10px 10px;
+      border-radius: 14px;
+      font-weight:650;
+      font-size:13px;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      cursor:pointer;
+      user-select:none;
+      touch-action: manipulation;
+      transition: transform .06s ease, background .2s ease, border-color .2s ease;
+    }
+    .btn:active{ transform: translateY(1px) scale(.99); }
+    .btn:hover{ background: rgba(255,255,255,.10); border-color: rgba(255,255,255,.22); }
+    .btn.small{ padding:8px 10px; font-size:12px; border-radius: 12px; }
+    .btn.primary{ border-color: rgba(106,228,255,.35); background: rgba(106,228,255,.14); }
+    .btn.primary:hover{ background: rgba(106,228,255,.20); }
+    .btn.danger{ border-color: rgba(255,93,106,.35); background: rgba(255,93,106,.12); }
+    .btn.danger:hover{ background: rgba(255,93,106,.18); }
+
+    .chip{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:8px 10px;
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.05);
+      border-radius:999px;
+      font-size:12px;
+      font-weight:650;
+      color:var(--muted);
+      user-select:none;
+    }
+    .chip strong{ color:var(--text); }
+
+    .seg{
+      display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+    }
+    .mode{
+      display:flex; gap:6px; align-items:center;
+      padding:6px; border:1px solid var(--stroke);
+      border-radius: 14px; background: rgba(255,255,255,.05);
+    }
+    .mode .btn{ border-radius: 12px; padding:8px 10px; }
+    .mode .btn.active{
+      border-color: rgba(106,228,255,.5);
+      background: rgba(106,228,255,.18);
+      color: var(--text);
+    }
+
+    /* Left panel content */
+    .leftBody{
+      height: calc(100% - 54px);
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
+    }
+    .section{
+      padding:12px;
+      border-bottom:1px solid var(--stroke);
+    }
+    .section h3{
+      margin:0 0 10px 0;
+      font-size:13px; letter-spacing:.2px;
+      color: rgba(255,255,255,.84);
+    }
+
+    .row{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    .row + .row{ margin-top:8px; }
+
+    .input{
+      flex:1;
+      min-width: 160px;
+      padding:10px 12px;
+      border-radius: 14px;
+      border:1px solid var(--stroke);
+      background: rgba(0,0,0,.18);
+      color: var(--text);
+      outline:none;
+      font-size:13px;
+    }
+    .input::placeholder{ color: rgba(255,255,255,.38); }
+
+    .color{
+      width:44px; height:40px;
+      border-radius: 14px;
+      border:1px solid var(--stroke);
+      background: rgba(0,0,0,.18);
+      padding:0;
+      overflow:hidden;
+    }
+    .color input{ width:100%; height:100%; border:0; padding:0; background:transparent; }
+
+    .sources{
+      padding:12px;
+      overflow:auto;
+      flex:1;
+    }
+    .sourceItem{
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.06);
+      border-radius: 16px;
+      padding:10px;
+      display:grid;
+      grid-template-columns: 54px 1fr;
+      gap:10px;
+      margin-bottom:10px;
+    }
+    .thumb{
+      width:54px; height:54px;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.18);
+      overflow:hidden;
+      display:flex; align-items:center; justify-content:center;
+      color: rgba(255,255,255,.55);
+      font-weight:800;
+      font-size:12px;
+    }
+    .thumb img, .thumb canvas{ width:100%; height:100%; object-fit:cover; display:block; }
+    .meta{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      min-width:0;
+    }
+    .meta .title{
+      font-size:13px;
+      font-weight:750;
+      overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    }
+    .meta .type{
+      font-size:12px;
+      color: var(--muted);
+      overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    }
+    .meta .actions{ display:flex; gap:8px; flex-wrap:wrap; }
+
+    .note{
+      font-size:12px;
+      color: rgba(255,255,255,.58);
+      line-height:1.35;
+    }
+
+    /* Main / desk */
+    .main{
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
+    }
+    .mainBody{
+      flex:1;
+      position:relative;
+      overflow:hidden;
+      background:
+        radial-gradient(circle at 40% 20%, rgba(106,228,255,.10), transparent 40%),
+        radial-gradient(circle at 80% 60%, rgba(108,255,177,.08), transparent 45%),
+        linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+    }
+
+    .deskViewport{
+      position:absolute;
+      inset:0;
+      overflow:hidden;
+      touch-action: none; /* gesture custom */
+    }
+
+    .deskContent{
+      position:absolute;
+      left:0; top:0;
+      transform-origin: 0 0;
+      will-change: transform;
+    }
+
+    /* Grid effect */
+    .gridLayer{
+      position:absolute;
+      left:0; top:0;
+      width: 8000px; height: 8000px;
+      background-image:
+        linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255,255,255,.06) 1px, transparent 1px);
+      background-size: 80px 80px;
+      opacity:.25;
+      pointer-events:none;
+    }
+    .gridLayer:after{
+      content:"";
+      position:absolute; inset:0;
+      background-image:
+        linear-gradient(to right, rgba(255,255,255,.08) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255,255,255,.08) 1px, transparent 1px);
+      background-size: 16px 16px;
+      opacity:.22;
+      pointer-events:none;
+    }
+
+    .svgLayer{
+      position:absolute;
+      left:0; top:0;
+      width: 8000px; height: 8000px;
+      pointer-events:none;
+    }
+
+    /* Cards */
+    .card{
+      position:absolute;
+      border:1px solid rgba(255,255,255,.18);
+      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
+      border-radius: 18px;
+      box-shadow: 0 14px 40px rgba(0,0,0,.45);
+      overflow:hidden;
+      min-width: 180px;
+      min-height: 120px;
+      touch-action:none;
+      user-select:none;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    .card.selected{
+      border-color: rgba(106,228,255,.55);
+      box-shadow: 0 18px 55px rgba(0,0,0,.55), 0 0 0 3px rgba(106,228,255,.12);
+    }
+    .cardHeader{
+      height:38px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      padding:8px 10px;
+      border-bottom:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.14);
+      cursor:grab;
+    }
+    .cardHeader:active{ cursor:grabbing; }
+    .cardHeader .lefty{
+      display:flex; align-items:center; gap:8px; min-width:0;
+    }
+    .badge{
+      font-size:11px;
+      font-weight:800;
+      letter-spacing:.5px;
+      color: rgba(255,255,255,.78);
+      background: rgba(255,255,255,.10);
+      border:1px solid rgba(255,255,255,.12);
+      padding:4px 8px;
+      border-radius:999px;
+      text-transform:uppercase;
+    }
+    .cardTitle{
+      font-weight:800;
+      font-size:12.5px;
+      color: rgba(255,255,255,.92);
+      overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+      max-width: 240px;
+    }
+    .cardBtns{ display:flex; gap:6px; }
+    .iconBtn{
+      width:30px; height:30px;
+      display:flex; align-items:center; justify-content:center;
+      border-radius: 10px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      cursor:pointer;
+    }
+    .iconBtn:hover{ background: rgba(255,255,255,.10); }
+    .iconBtn.danger:hover{ background: rgba(255,93,106,.15); border-color: rgba(255,93,106,.22); }
+
+    .cardBody{
+      height: calc(100% - 38px);
+      padding:10px;
+      overflow:hidden;
+      pointer-events:none; /* click handled by card container */
+    }
+    .preview{
+      width:100%;
+      height:100%;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.16);
+      overflow:hidden;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color: rgba(255,255,255,.60);
+      font-size:12px;
+      text-align:center;
+      line-height:1.3;
+    }
+    .preview img, .preview video, .preview iframe, .preview canvas{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      border:0;
+      display:block;
+    }
+    .preview .snippet{
+      padding:10px;
+      text-align:left;
+      white-space:pre-wrap;
+      overflow:hidden;
+      display:-webkit-box;
+      -webkit-line-clamp: 6;
+      -webkit-box-orient: vertical;
+      color: rgba(255,255,255,.78);
+    }
+
+    .resizeHandle{
+      position:absolute;
+      right:8px;
+      bottom:8px;
+      width:16px;
+      height:16px;
+      border-radius: 6px;
+      border:1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.12);
+      cursor:nwse-resize;
+      touch-action:none;
+    }
+
+    /* Modal viewer */
+    .modal{
+      position:fixed;
+      inset:0;
+      background: rgba(0,0,0,.62);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding: 14px;
+      z-index: 9999;
+    }
+    .modal.open{ display:flex; }
+    .modalBox{
+      width: min(1100px, 100%);
+      height: min(760px, 100%);
+      border-radius: 22px;
+      border:1px solid rgba(255,255,255,.18);
+      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .modalTop{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:10px 12px;
+      border-bottom:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.16);
+    }
+    .modalTop .title{
+      font-weight:900;
+      overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    }
+    .modalBody{
+      flex:1;
+      background: rgba(0,0,0,.14);
+      overflow:auto;
+      padding:12px;
+    }
+    .viewer{
+      width:100%;
+      min-height: 100%;
+      border-radius: 18px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.18);
+      overflow:hidden;
+    }
+    .viewer iframe, .viewer video{
+      width:100%;
+      height: 620px;
+      border:0;
+      display:block;
+      background: #000;
+    }
+    .viewer img{
+      width:100%;
+      height:auto;
+      display:block;
+    }
+    .viewer .text{
+      padding:14px;
+      white-space:pre-wrap;
+      color: rgba(255,255,255,.88);
+      line-height:1.45;
+      font-size: 15px;
+    }
+    .pdfWrap{
+      padding:12px;
+    }
+    .pdfPage{
+      margin: 10px auto 16px auto;
+      display:block;
+      border-radius: 14px;
+      overflow:hidden;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.15);
+      max-width: 980px;
+    }
+    .pdfPage canvas{
+      width:100%;
+      height:auto;
+      display:block;
+    }
+
+    /* Connector lines */
+    .conn{
+      pointer-events: stroke;
+      cursor:pointer;
+    }
+
+    .toast{
+      position:absolute;
+      bottom:14px;
+      left:14px;
+      padding:10px 12px;
+      border-radius: 14px;
+      background: rgba(0,0,0,.42);
+      border:1px solid rgba(255,255,255,.16);
+      color: rgba(255,255,255,.85);
+      font-size:12px;
+      display:none;
+      max-width: 520px;
+      z-index: 40;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+    .toast.show{ display:block; }
+
+    .kbd{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono";
+      font-size:11px;
+      padding:2px 6px;
+      border-radius: 8px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.08);
+      color: rgba(255,255,255,.78);
+    }
+
+    /* Hide default file input look */
+    input[type="file"]{ display:none; }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <!-- LEFT: Sources / Import -->
+    <aside class="left">
+      <div class="topbar">
+        <div>
+          <div class="brand"><span class="dot"></span>Interactive Desk</div>
+          <div class="sub">Static — GitHub Pages ready</div>
+        </div>
+        <div class="chip"><strong id="counts">0</strong> card</div>
+      </div>
+
+      <div class="leftBody">
+        <div class="section">
+          <h3>Deposito fonti (vuoto all’avvio)</h3>
+
+          <div class="row">
+            <label class="btn small primary" for="imgFile">+ Immagine</label>
+            <input id="imgFile" type="file" accept="image/*" />
+            <label class="btn small primary" for="pdfFile">+ PDF</label>
+            <input id="pdfFile" type="file" accept="application/pdf" />
+          </div>
+
+          <div class="row">
+            <input id="textTitle" class="input" placeholder="Titolo testo (opzionale)" />
+            <button class="btn small primary" id="addTextBtn">+ Testo</button>
+          </div>
+
+          <div class="row">
+            <input id="webUrl" class="input" placeholder="URL pagina web (iframe se possibile)" />
+            <button class="btn small primary" id="addWebBtn">+ Web</button>
+          </div>
+
+          <div class="row">
+            <input id="videoUrl" class="input" placeholder="URL video (mp4 o YouTube)" />
+            <button class="btn small primary" id="addVideoBtn">+ Video</button>
+          </div>
+
+          <div class="row">
+            <div class="note">
+              Suggerimento: per web/video usa link “diretti”. Alcuni siti bloccano l’iframe: in quel caso apri dal viewer in una nuova scheda.
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <h3>Azioni (desk)</h3>
+          <div class="row">
+            <button class="btn small" id="exportBtn">Esporta JSON</button>
+            <label class="btn small" for="importFile">Importa JSON</label>
+            <input id="importFile" type="file" accept="application/json" />
+          </div>
+          <div class="row">
+            <button class="btn small danger" id="clearDeskBtn">Svuota desk</button>
+            <button class="btn small danger" id="clearSourcesBtn">Svuota fonti</button>
+          </div>
+        </div>
+
+        <div class="sources" id="sourcesList" aria-label="Fonti">
+          <!-- source items -->
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN: Desk -->
+    <main class="main">
+      <div class="topbar">
+        <div class="seg">
+          <div class="mode" aria-label="Modalità">
+            <button class="btn small active" id="modeSelect">Muovi</button>
+            <button class="btn small" id="modePan">Pan</button>
+            <button class="btn small" id="modeConnect">Connetti</button>
+            <button class="btn small" id="modeDelete">Cancella</button>
+          </div>
+
+          <span class="chip">Zoom: <strong id="zoomPct">100%</strong></span>
+          <span class="chip">Suggerimento: pinch su iPad • wheel su desktop</span>
+        </div>
+
+        <div class="seg">
+          <div class="chip">
+            Connettori:
+            <span class="color" title="Colore connettori"><input id="connColor" type="color" value="#6ae4ff"></span>
+          </div>
+          <button class="btn small danger" id="delAllConn">Cancella connettori</button>
+          <button class="btn small" id="resetView">Reset vista</button>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <span class="chip">Tap su una card: <strong>apri</strong></span>
+        <span class="chip">Trascina header: <strong>sposta</strong></span>
+        <span class="chip">Angolo in basso: <strong>ridimensiona</strong></span>
+        <span class="chip">Modalità Connetti: <strong>clic 2 card</strong></span>
+        <span class="chip">Modalità Cancella: <strong>clic card/linea</strong></span>
+      </div>
+
+      <div class="mainBody">
+        <div class="deskViewport" id="deskViewport">
+          <div class="deskContent" id="deskContent">
+            <div class="gridLayer"></div>
+            <svg class="svgLayer" id="svgLayer" xmlns="http://www.w3.org/2000/svg"></svg>
+            <!-- cards injected here -->
+          </div>
+
+          <div class="toast" id="toast"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal viewer -->
+  <div class="modal" id="modal">
+    <div class="modalBox">
+      <div class="modalTop">
+        <div class="title" id="modalTitle">Viewer</div>
+        <div class="seg">
+          <button class="btn small" id="modalOpenNewTab" style="display:none;">Apri in nuova scheda</button>
+          <button class="btn small danger" id="modalClose">Chiudi</button>
+        </div>
+      </div>
+      <div class="modalBody">
+        <div class="viewer" id="viewer"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ---------- PDF.js setup ----------
+    // pdfjsLib is global from CDN
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.7.76/build/pdf.worker.min.js";
+
+    // ---------- Utilities ----------
+    const $ = (sel, el=document) => el.querySelector(sel);
+    const $$ = (sel, el=document) => Array.from(el.querySelectorAll(sel));
+    const uid = () => Math.random().toString(16).slice(2) + Date.now().toString(16);
+
+    function showToast(msg){
+      const t = $("#toast");
+      t.textContent = msg;
+      t.classList.add("show");
+      clearTimeout(showToast._tm);
+      showToast._tm = setTimeout(()=> t.classList.remove("show"), 2200);
+    }
+
+    function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
+
+    function screenToDesk(pt){
+      // pt: {x,y} in viewport coords
+      return {
+        x: (pt.x - view.tx) / view.scale,
+        y: (pt.y - view.ty) / view.scale
+      };
+    }
+    function deskToScreen(pt){
+      return {
+        x: pt.x * view.scale + view.tx,
+        y: pt.y * view.scale + view.ty
+      };
+    }
+
+    function getYouTubeEmbed(url){
+      try{
+        const u = new URL(url);
+        if(u.hostname.includes("youtu.be")){
+          const id = u.pathname.replace("/","");
+          return `https://www.youtube.com/embed/${id}`;
+        }
+        if(u.hostname.includes("youtube.com")){
+          const id = u.searchParams.get("v");
+          if(id) return `https://www.youtube.com/embed/${id}`;
+          // shorts
+          if(u.pathname.startsWith("/shorts/")){
+            const id2 = u.pathname.split("/shorts/")[1].split(/[/?#]/)[0];
+            return `https://www.youtube.com/embed/${id2}`;
+          }
+        }
+      }catch(e){}
+      return null;
+    }
+
+    function isLikelyMp4(url){
+      return /\.mp4(\?.*)?$/i.test(url);
+    }
+
+    function downloadText(filename, text){
+      const blob = new Blob([text], {type:"application/json"});
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      URL.revokeObjectURL(a.href);
+      a.remove();
+    }
+
+    function fileToBase64(file){
+      return new Promise((resolve, reject)=>{
+        const r = new FileReader();
+        r.onload = ()=> resolve(r.result);
+        r.onerror = reject;
+        r.readAsDataURL(file);
+      });
+    }
+
+    function arrayBufferToBase64(buf){
+      const bytes = new Uint8Array(buf);
+      let bin = "";
+      for(let i=0;i<bytes.length;i++) bin += String.fromCharCode(bytes[i]);
+      return btoa(bin);
+    }
+
+    function base64ToArrayBuffer(b64){
+      const bin = atob(b64);
+      const len = bin.length;
+      const bytes = new Uint8Array(len);
+      for(let i=0;i<len;i++) bytes[i] = bin.charCodeAt(i);
+      return bytes.buffer;
+    }
+
+    // ---------- State ----------
+    const sources = [];     // deposit
+    const cards = [];       // desk cards
+    const connectors = [];  // {id, a:cardId, b:cardId, color}
+    let selectedCardId = null;
+
+    const view = {
+      scale: 1,
+      tx: 60,  // screen px
+      ty: 60
+    };
+
+    const app = {
+      mode: "select", // select | pan | connect | delete
+      connectFirst: null,
+      pointers: new Map(), // for pinch / pan
+      pinch: null
+    };
+
+    const deskViewport = $("#deskViewport");
+    const deskContent  = $("#deskContent");
+    const svgLayer     = $("#svgLayer");
+    const sourcesList  = $("#sourcesList");
+
+    function updateCounts(){
+      $("#counts").textContent = cards.length;
+    }
+
+    function setMode(mode){
+      app.mode = mode;
+      app.connectFirst = null;
+      ["modeSelect","modePan","modeConnect","modeDelete"].forEach(id => $("#"+id).classList.remove("active"));
+      if(mode==="select") $("#modeSelect").classList.add("active");
+      if(mode==="pan") $("#modePan").classList.add("active");
+      if(mode==="connect") $("#modeConnect").classList.add("active");
+      if(mode==="delete") $("#modeDelete").classList.add("active");
+
+      if(mode==="connect") showToast("Connetti: tocca 2 card per creare una linea.");
+      if(mode==="delete")  showToast("Cancella: tocca una card o una linea.");
+      if(mode==="pan")     showToast("Pan: trascina lo sfondo (o usa due dita).");
+      if(mode==="select")  showToast("Muovi: trascina le card (header).");
+    }
+
+    function applyTransform(){
+      deskContent.style.transform = `translate(${view.tx}px, ${view.ty}px) scale(${view.scale})`;
+      $("#zoomPct").textContent = Math.round(view.scale*100) + "%";
+    }
+
+    function resetView(){
+      view.scale = 1;
+      view.tx = 60;
+      view.ty = 60;
+      applyTransform();
+    }
+
+    // ---------- Rendering ----------
+    function renderSources(){
+      sourcesList.innerHTML = "";
+      if(sources.length === 0){
+        const empty = document.createElement("div");
+        empty.className = "note";
+        empty.style.padding = "10px 2px";
+        empty.textContent = "Nessuna fonte nel deposito. Aggiungi immagini, PDF, testo, web o video qui sopra.";
+        sourcesList.appendChild(empty);
+        return;
+      }
+
+      for(const s of sources){
+        const wrap = document.createElement("div");
+        wrap.className = "sourceItem";
+        wrap.dataset.id = s.id;
+
+        const t = document.createElement("div");
+        t.className = "thumb";
+
+        // thumbnails
+        if(s.type === "image"){
+          const img = new Image();
+          img.src = s.dataUrl;
+          t.appendChild(img);
+        }else if(s.type === "pdf" && s.thumbDataUrl){
+          const img = new Image();
+          img.src = s.thumbDataUrl;
+          t.appendChild(img);
+        }else{
+          t.textContent = s.type.toUpperCase();
+        }
+
+        const meta = document.createElement("div");
+        meta.className = "meta";
+
+        const title = document.createElement("div");
+        title.className = "title";
+        title.textContent = s.title || "Senza titolo";
+
+        const type = document.createElement("div");
+        type.className = "type";
+        type.textContent = s.desc || s.type;
+
+        const actions = document.createElement("div");
+        actions.className = "actions";
+
+        const add = document.createElement("button");
+        add.className = "btn small primary";
+        add.textContent = "Aggiungi al desk";
+        add.onclick = ()=> addCardFromSource(s.id);
+
+        const del = document.createElement("button");
+        del.className = "btn small danger";
+        del.textContent = "Rimuovi";
+        del.onclick = ()=> {
+          const idx = sources.findIndex(x=>x.id===s.id);
+          if(idx>=0) sources.splice(idx,1);
+          renderSources();
+        };
+
+        actions.appendChild(add);
+        actions.appendChild(del);
+
+        meta.appendChild(title);
+        meta.appendChild(type);
+        meta.appendChild(actions);
+
+        wrap.appendChild(t);
+        wrap.appendChild(meta);
+
+        sourcesList.appendChild(wrap);
+      }
+    }
+
+    function renderCards(){
+      // Remove existing card nodes (keep grid & svg)
+      $$(".card", deskContent).forEach(n => n.remove());
+
+      for(const c of cards){
+        const el = document.createElement("div");
+        el.className = "card";
+        if(c.id === selectedCardId) el.classList.add("selected");
+        el.dataset.id = c.id;
+        el.style.left = c.x + "px";
+        el.style.top  = c.y + "px";
+        el.style.width  = c.w + "px";
+        el.style.height = c.h + "px";
+
+        // Header
+        const header = document.createElement("div");
+        header.className = "cardHeader";
+
+        const lefty = document.createElement("div");
+        lefty.className = "lefty";
+
+        const badge = document.createElement("div");
+        badge.className = "badge";
+        badge.textContent = c.type;
+
+        const title = document.createElement("div");
+        title.className = "cardTitle";
+        title.textContent = c.title || c.type.toUpperCase();
+
+        lefty.appendChild(badge);
+        lefty.appendChild(title);
+
+        const btns = document.createElement("div");
+        btns.className = "cardBtns";
+
+        const openBtn = document.createElement("div");
+        openBtn.className = "iconBtn";
+        openBtn.title = "Apri";
+        openBtn.innerHTML = "↗";
+        openBtn.onclick = (e)=> { e.stopPropagation(); openCard(c.id); };
+
+        const delBtn = document.createElement("div");
+        delBtn.className = "iconBtn danger";
+        delBtn.title = "Elimina";
+        delBtn.innerHTML = "✕";
+        delBtn.onclick = (e)=> { e.stopPropagation(); deleteCard(c.id); };
+
+        btns.appendChild(openBtn);
+        btns.appendChild(delBtn);
+
+        header.appendChild(lefty);
+        header.appendChild(btns);
+
+        // Body
+        const body = document.createElement("div");
+        body.className = "cardBody";
+        const prev = document.createElement("div");
+        prev.className = "preview";
+
+        if(c.type === "image"){
+          const img = new Image();
+          img.src = c.dataUrl;
+          prev.appendChild(img);
+        }else if(c.type === "text"){
+          const sn = document.createElement("div");
+          sn.className = "snippet";
+          sn.textContent = c.text || "";
+          prev.appendChild(sn);
+        }else if(c.type === "pdf"){
+          if(c.thumbDataUrl){
+            const img = new Image();
+            img.src = c.thumbDataUrl;
+            prev.appendChild(img);
+          }else{
+            prev.textContent = "PDF";
+          }
+        }else if(c.type === "web"){
+          prev.innerHTML = `<div style="padding:12px;">
+              <div style="font-weight:900; margin-bottom:6px;">🌐 Pagina web</div>
+              <div style="color:rgba(255,255,255,.7); font-size:12px; word-break:break-word;">${escapeHtml(c.url)}</div>
+              <div style="color:rgba(255,255,255,.55); font-size:12px; margin-top:10px;">Apri per navigare</div>
+            </div>`;
+        }else if(c.type === "video"){
+          prev.innerHTML = `<div style="padding:12px;">
+              <div style="font-weight:900; margin-bottom:6px;">▶ Video</div>
+              <div style="color:rgba(255,255,255,.7); font-size:12px; word-break:break-word;">${escapeHtml(c.url)}</div>
+              <div style="color:rgba(255,255,255,.55); font-size:12px; margin-top:10px;">Apri per avviare</div>
+            </div>`;
+        }else{
+          prev.textContent = "Contenuto";
+        }
+
+        body.appendChild(prev);
+
+        const handle = document.createElement("div");
+        handle.className = "resizeHandle";
+        handle.title = "Ridimensiona";
+
+        el.appendChild(header);
+        el.appendChild(body);
+        el.appendChild(handle);
+
+        // Interactions
+        el.addEventListener("pointerdown", (e)=> onCardPointerDown(e, c.id, header, handle));
+        el.addEventListener("click", (e)=> {
+          // avoid click when dragging or pressing buttons
+          if(e.defaultPrevented) return;
+          if(app.mode === "delete"){
+            deleteCard(c.id);
+            return;
+          }
+          if(app.mode === "connect"){
+            connectClick(c.id);
+            return;
+          }
+          // normal open on tap/click (but not if clicking header buttons)
+          if(e.target.classList.contains("iconBtn")) return;
+          openCard(c.id);
+        });
+
+        deskContent.appendChild(el);
+      }
+
+      updateCounts();
+      renderConnectors();
+    }
+
+    function renderConnectors(){
+      // svg covers 8000x8000 desk space
+      svgLayer.setAttribute("viewBox", "0 0 8000 8000");
+      svgLayer.innerHTML = "";
+
+      for(const cn of connectors){
+        const a = cards.find(x=>x.id===cn.a);
+        const b = cards.find(x=>x.id===cn.b);
+        if(!a || !b) continue;
+
+        const ax = a.x + a.w/2;
+        const ay = a.y + a.h/2;
+        const bx = b.x + b.w/2;
+        const by = b.y + b.h/2;
+
+        const dx = Math.abs(bx-ax);
+        const dy = Math.abs(by-ay);
+        const c1x = ax + (bx>ax ? dx*0.35 : -dx*0.35);
+        const c1y = ay;
+        const c2x = bx - (bx>ax ? dx*0.35 : -dx*0.35);
+        const c2y = by;
+
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        const d = `M ${ax} ${ay} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${bx} ${by}`;
+        path.setAttribute("d", d);
+        path.setAttribute("fill", "none");
+        path.setAttribute("stroke", cn.color || "#6ae4ff");
+        path.setAttribute("stroke-width", "6");
+        path.setAttribute("stroke-linecap", "round");
+        path.setAttribute("opacity", "0.95");
+        path.classList.add("conn");
+        path.style.pointerEvents = "stroke";
+        path.addEventListener("click", (e)=>{
+          e.stopPropagation();
+          if(app.mode === "delete"){
+            const idx = connectors.findIndex(x=>x.id===cn.id);
+            if(idx>=0) connectors.splice(idx,1);
+            renderConnectors();
+          }else{
+            showToast("Linea: passa a 'Cancella' per rimuoverla.");
+          }
+        });
+
+        // add a subtle glow stroke behind
+        const glow = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        glow.setAttribute("d", d);
+        glow.setAttribute("fill", "none");
+        glow.setAttribute("stroke", cn.color || "#6ae4ff");
+        glow.setAttribute("stroke-width", "14");
+        glow.setAttribute("stroke-linecap", "round");
+        glow.setAttribute("opacity", "0.12");
+        glow.style.pointerEvents = "none";
+
+        svgLayer.appendChild(glow);
+        svgLayer.appendChild(path);
+      }
+    }
+
+    function escapeHtml(str){
+      return (str || "").replace(/[&<>"']/g, (m)=>({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+      }[m]));
+    }
+
+    // ---------- Card operations ----------
+    function addCardFromSource(sourceId){
+      const s = sources.find(x=>x.id===sourceId);
+      if(!s) return;
+
+      const center = screenToDesk({x: deskViewport.clientWidth/2, y: deskViewport.clientHeight/2});
+      const card = {
+        id: uid(),
+        type: s.type,
+        title: s.title || s.type.toUpperCase(),
+        x: clamp(center.x - 180, 0, 7600),
+        y: clamp(center.y - 120, 0, 7600),
+        w: (s.type==="text") ? 340 : 360,
+        h: (s.type==="image") ? 260 : (s.type==="pdf" ? 300 : 240),
+      };
+
+      if(s.type==="image"){
+        card.dataUrl = s.dataUrl;
+      }else if(s.type==="pdf"){
+        card.pdfBase64 = s.pdfBase64;  // raw PDF bytes base64
+        card.fileName = s.fileName || "documento.pdf";
+        card.thumbDataUrl = s.thumbDataUrl || null;
+      }else if(s.type==="text"){
+        card.text = s.text || "";
+      }else if(s.type==="web"){
+        card.url = s.url;
+      }else if(s.type==="video"){
+        card.url = s.url;
+      }
+
+      cards.push(card);
+      selectedCardId = card.id;
+      renderCards();
+      showToast("Aggiunto al desk.");
+    }
+
+    function deleteCard(cardId){
+      // remove connectors attached
+      for(let i=connectors.length-1;i>=0;i--){
+        if(connectors[i].a===cardId || connectors[i].b===cardId) connectors.splice(i,1);
+      }
+      const idx = cards.findIndex(x=>x.id===cardId);
+      if(idx>=0) cards.splice(idx,1);
+      if(selectedCardId === cardId) selectedCardId = null;
+      renderCards();
+      showToast("Card eliminata.");
+    }
+
+    function clearDesk(){
+      cards.length = 0;
+      connectors.length = 0;
+      selectedCardId = null;
+      renderCards();
+      showToast("Desk svuotato.");
+    }
+
+    function clearSources(){
+      sources.length = 0;
+      renderSources();
+      showToast("Fonti svuotate.");
+    }
+
+    // ---------- Connect mode ----------
+    function connectClick(cardId){
+      if(!app.connectFirst){
+        app.connectFirst = cardId;
+        selectedCardId = cardId;
+        renderCards();
+        showToast("Ora tocca la seconda card…");
+        return;
+      }
+      if(app.connectFirst === cardId){
+        showToast("Scegli una card diversa.");
+        return;
+      }
+      // create connector
+      const exists = connectors.some(cn =>
+        (cn.a===app.connectFirst && cn.b===cardId) || (cn.a===cardId && cn.b===app.connectFirst)
+      );
+      if(exists){
+        showToast("Connettore già presente.");
+        app.connectFirst = null;
+        return;
+      }
+      connectors.push({
+        id: uid(),
+        a: app.connectFirst,
+        b: cardId,
+        color: $("#connColor").value
+      });
+      app.connectFirst = null;
+      renderConnectors();
+      showToast("Connettore creato.");
+    }
+
+    function deleteAllConnectors(){
+      connectors.length = 0;
+      renderConnectors();
+      showToast("Connettori cancellati.");
+    }
+
+    // ---------- Drag / Resize on cards ----------
+    let drag = null;
+
+    function onCardPointerDown(e, cardId, headerEl, handleEl){
+      // avoid actions when clicking header buttons
+      if(e.target.classList.contains("iconBtn")) return;
+
+      const c = cards.find(x=>x.id===cardId);
+      if(!c) return;
+
+      // In delete mode: handled by click
+      if(app.mode === "delete") return;
+      if(app.mode === "connect") return;
+
+      selectedCardId = cardId;
+      renderCards();
+
+      const isResize = (e.target === handleEl);
+      const isMove = (headerEl.contains(e.target)) && app.mode === "select";
+      if(!(isResize || isMove)) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+
+      const startScreen = {x:e.clientX, y:e.clientY};
+      const startDesk = screenToDesk(startScreen);
+
+      drag = {
+        cardId,
+        kind: isResize ? "resize" : "move",
+        startX: c.x, startY: c.y,
+        startW: c.w, startH: c.h,
+        startDeskX: startDesk.x,
+        startDeskY: startDesk.y
+      };
+
+      e.currentTarget.setPointerCapture(e.pointerId);
+
+      const onMove = (ev)=>{
+        if(!drag) return;
+        ev.preventDefault();
+        const nowDesk = screenToDesk({x:ev.clientX, y:ev.clientY});
+        const dx = nowDesk.x - drag.startDeskX;
+        const dy = nowDesk.y - drag.startDeskY;
+
+        if(drag.kind === "move"){
+          c.x = clamp(drag.startX + dx, 0, 8000 - 60);
+          c.y = clamp(drag.startY + dy, 0, 8000 - 60);
+        }else{
+          c.w = clamp(drag.startW + dx, 180, 900);
+          c.h = clamp(drag.startH + dy, 120, 780);
+        }
+        const el = $(`.card[data-id="${cardId}"]`, deskContent);
+        if(el){
+          el.style.left = c.x + "px";
+          el.style.top = c.y + "px";
+          el.style.width = c.w + "px";
+          el.style.height = c.h + "px";
+        }
+        renderConnectors();
+      };
+
+      const onUp = (ev)=>{
+        if(!drag) return;
+        try{ e.currentTarget.releasePointerCapture(e.pointerId); }catch(_){}
+        drag = null;
+        window.removeEventListener("pointermove", onMove);
+        window.removeEventListener("pointerup", onUp);
+      };
+
+      window.addEventListener("pointermove", onMove, {passive:false});
+      window.addEventListener("pointerup", onUp, {passive:false});
+    }
+
+    // ---------- Desk pan / zoom ----------
+    deskViewport.addEventListener("pointerdown", (e)=>{
+      // ignore if clicking on a card
+      if(e.target.closest(".card")) return;
+
+      // Track pointers for pinch
+      deskViewport.setPointerCapture(e.pointerId);
+      app.pointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
+      if(app.pointers.size === 2){
+        const pts = Array.from(app.pointers.values());
+        const dist = Math.hypot(pts[1].x-pts[0].x, pts[1].y-pts[0].y);
+        const mid  = {x:(pts[0].x+pts[1].x)/2, y:(pts[0].y+pts[1].y)/2};
+        app.pinch = {
+          startDist: dist,
+          startScale: view.scale,
+          startTx: view.tx,
+          startTy: view.ty,
+          mid
+        };
+      }else{
+        // Single pointer pan if mode pan
+        if(app.mode === "pan"){
+          app.pinch = app.pinch || {};
+          app.pinch.panStart = {x:e.clientX, y:e.clientY, tx:view.tx, ty:view.ty};
+        }
+      }
+    }, {passive:false});
+
+    deskViewport.addEventListener("pointermove", (e)=>{
+      if(!app.pointers.has(e.pointerId)) return;
+
+      app.pointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
+
+      // Pinch zoom (2 pointers)
+      if(app.pointers.size === 2 && app.pinch){
+        e.preventDefault();
+        const pts = Array.from(app.pointers.values());
+        const dist = Math.hypot(pts[1].x-pts[0].x, pts[1].y-pts[0].y);
+        const mid  = {x:(pts[0].x+pts[1].x)/2, y:(pts[0].y+pts[1].y)/2};
+
+        const factor = dist / app.pinch.startDist;
+        const newScale = clamp(app.pinch.startScale * factor, 0.35, 2.5);
+
+        // zoom around midpoint
+        // Keep desk point under mid stable
+        const before = screenToDesk(mid);
+        view.scale = newScale;
+        const after = screenToDesk(mid);
+        view.tx += (after.x - before.x) * view.scale;
+        view.ty += (after.y - before.y) * view.scale;
+
+        applyTransform();
+        return;
+      }
+
+      // Pan (single pointer) only in pan mode
+      if(app.mode === "pan" && app.pinch && app.pinch.panStart){
+        e.preventDefault();
+        const p0 = app.pinch.panStart;
+        const dx = e.clientX - p0.x;
+        const dy = e.clientY - p0.y;
+        view.tx = p0.tx + dx;
+        view.ty = p0.ty + dy;
+        applyTransform();
+      }
+    }, {passive:false});
+
+    deskViewport.addEventListener("pointerup", (e)=>{
+      app.pointers.delete(e.pointerId);
+      if(app.pointers.size < 2) app.pinch = null;
+    });
+
+    deskViewport.addEventListener("pointercancel", (e)=>{
+      app.pointers.delete(e.pointerId);
+      if(app.pointers.size < 2) app.pinch = null;
+    });
+
+    // wheel zoom for desktop
+    deskViewport.addEventListener("wheel", (e)=>{
+      e.preventDefault();
+      const delta = -e.deltaY;
+      const zoom = delta > 0 ? 1.08 : 0.92;
+
+      const mouse = {x:e.clientX, y:e.clientY};
+      const before = screenToDesk(mouse);
+
+      view.scale = clamp(view.scale * zoom, 0.35, 2.5);
+
+      const after = screenToDesk(mouse);
+      // shift to keep point stable
+      view.tx += (after.x - before.x) * view.scale;
+      view.ty += (after.y - before.y) * view.scale;
+
+      applyTransform();
+    }, {passive:false});
+
+    // Click on background
+    deskViewport.addEventListener("click", (e)=>{
+      if(e.target.closest(".card")) return;
+      if(app.mode === "connect"){
+        app.connectFirst = null;
+        showToast("Selezione connettore annullata.");
+      }
+      selectedCardId = null;
+      renderCards();
+    });
+
+    // ---------- Viewer ----------
+    const modal = $("#modal");
+    const viewer = $("#viewer");
+
+    function openCard(cardId){
+      const c = cards.find(x=>x.id===cardId);
+      if(!c) return;
+
+      $("#modalTitle").textContent = c.title || c.type.toUpperCase();
+      viewer.innerHTML = "";
+      $("#modalOpenNewTab").style.display = "none";
+      $("#modalOpenNewTab").onclick = null;
+
+      if(c.type === "image"){
+        const img = new Image();
+        img.src = c.dataUrl;
+        viewer.appendChild(img);
+      }
+      else if(c.type === "text"){
+        const d = document.createElement("div");
+        d.className = "text";
+        d.textContent = c.text || "";
+        viewer.appendChild(d);
+      }
+      else if(c.type === "web"){
+        const url = c.url;
+        const wrap = document.createElement("div");
+        wrap.innerHTML = `<iframe sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
+                           referrerpolicy="no-referrer"
+                           src="${escapeHtml(url)}"></iframe>`;
+        viewer.appendChild(wrap.firstChild);
+
+        $("#modalOpenNewTab").style.display = "inline-flex";
+        $("#modalOpenNewTab").onclick = ()=> window.open(url, "_blank", "noopener,noreferrer");
+      }
+      else if(c.type === "video"){
+        const url = c.url;
+        const yt = getYouTubeEmbed(url);
+        if(yt){
+          const iframe = document.createElement("iframe");
+          iframe.src = yt;
+          iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
+          iframe.allowFullscreen = true;
+          viewer.appendChild(iframe);
+        }else if(isLikelyMp4(url)){
+          const v = document.createElement("video");
+          v.src = url;
+          v.controls = true;
+          v.playsInline = true;
+          viewer.appendChild(v);
+        }else{
+          // fallback: try iframe
+          const iframe = document.createElement("iframe");
+          iframe.src = url;
+          iframe.allow = "autoplay; encrypted-media; fullscreen";
+          iframe.allowFullscreen = true;
+          viewer.appendChild(iframe);
+
+          $("#modalOpenNewTab").style.display = "inline-flex";
+          $("#modalOpenNewTab").onclick = ()=> window.open(url, "_blank", "noopener,noreferrer");
+        }
+      }
+      else if(c.type === "pdf"){
+        const wrap = document.createElement("div");
+        wrap.className = "pdfWrap";
+        wrap.innerHTML = `<div class="note" style="padding:6px 2px 10px 2px;">
+          PDF multipagina: scroll verticale. Se il tuo iPad apre il PDF in viewer esterno, usa “Apri in nuova scheda”.
+        </div>`;
+        viewer.appendChild(wrap);
+
+        $("#modalOpenNewTab").style.display = "inline-flex";
+        $("#modalOpenNewTab").onclick = ()=>{
+          // If from base64, open blob in new tab
+          const buf = base64ToArrayBuffer(c.pdfBase64);
+          const blob = new Blob([buf], {type:"application/pdf"});
+          const urlObj = URL.createObjectURL(blob);
+          window.open(urlObj, "_blank", "noopener,noreferrer");
+          setTimeout(()=> URL.revokeObjectURL(urlObj), 8000);
+        };
+
+        renderPdfToViewer(c.pdfBase64, viewer);
+      }
+
+      modal.classList.add("open");
+    }
+
+    $("#modalClose").onclick = ()=> modal.classList.remove("open");
+    modal.addEventListener("click", (e)=>{ if(e.target===modal) modal.classList.remove("open"); });
+
+    async function renderPdfToViewer(pdfBase64, mount){
+      try{
+        const buf = base64ToArrayBuffer(pdfBase64);
+        const loadingTask = pdfjsLib.getDocument({data: buf});
+        const pdf = await loadingTask.promise;
+
+        const wrap = document.createElement("div");
+        wrap.className = "pdfWrap";
+        mount.appendChild(wrap);
+
+        for(let pageNum=1; pageNum<=pdf.numPages; pageNum++){
+          const page = await pdf.getPage(pageNum);
+
+          // choose scale based on page width vs container
+          const viewport = page.getViewport({scale: 1});
+          const maxW = Math.min(980, mount.clientWidth - 60);
+          const scale = maxW / viewport.width;
+
+          const vp = page.getViewport({scale: scale});
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.floor(vp.width);
+          canvas.height = Math.floor(vp.height);
+
+          const ctx = canvas.getContext("2d", {alpha:false});
+          await page.render({canvasContext: ctx, viewport: vp}).promise;
+
+          const box = document.createElement("div");
+          box.className = "pdfPage";
+          box.appendChild(canvas);
+          wrap.appendChild(box);
+        }
+      }catch(err){
+        console.error(err);
+        const msg = document.createElement("div");
+        msg.className = "note";
+        msg.style.padding = "12px";
+        msg.textContent = "Errore nel rendering PDF. Puoi comunque aprirlo in nuova scheda dal pulsante in alto.";
+        mount.appendChild(msg);
+      }
+    }
+
+    // ---------- Import sources ----------
+    $("#imgFile").addEventListener("change", async (e)=>{
+      const file = e.target.files?.[0];
+      e.target.value = "";
+      if(!file) return;
+      const dataUrl = await fileToBase64(file);
+
+      sources.push({
+        id: uid(),
+        type: "image",
+        title: file.name,
+        desc: "Immagine",
+        dataUrl
+      });
+
+      renderSources();
+      showToast("Immagine aggiunta alle fonti.");
+    });
+
+    $("#pdfFile").addEventListener("change", async (e)=>{
+      const file = e.target.files?.[0];
+      e.target.value = "";
+      if(!file) return;
+
+      const arrayBuf = await file.arrayBuffer();
+      const pdfBase64 = arrayBufferToBase64(arrayBuf);
+
+      // Create a thumbnail (first page) using pdf.js
+      let thumbDataUrl = null;
+      try{
+        const pdf = await pdfjsLib.getDocument({data: arrayBuf}).promise;
+        const page = await pdf.getPage(1);
+        const vp1 = page.getViewport({scale: 0.35});
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.floor(vp1.width);
+        canvas.height = Math.floor(vp1.height);
+        const ctx = canvas.getContext("2d", {alpha:false});
+        await page.render({canvasContext: ctx, viewport: vp1}).promise;
+        thumbDataUrl = canvas.toDataURL("image/jpeg", 0.82);
+      }catch(err){
+        console.warn("PDF thumb failed", err);
+      }
+
+      sources.push({
+        id: uid(),
+        type: "pdf",
+        title: file.name,
+        desc: "PDF (multipagina)",
+        fileName: file.name,
+        pdfBase64,
+        thumbDataUrl
+      });
+
+      renderSources();
+      showToast("PDF aggiunto alle fonti.");
+    });
+
+    $("#addTextBtn").addEventListener("click", ()=>{
+      const title = $("#textTitle").value.trim() || "Testo";
+      const txt = prompt("Incolla il testo (puoi anche scrivere tanto):");
+      if(txt === null) return;
+
+      sources.push({
+        id: uid(),
+        type: "text",
+        title,
+        desc: "Testo",
+        text: txt
+      });
+
+      $("#textTitle").value = "";
+      renderSources();
+      showToast("Testo aggiunto alle fonti.");
+    });
+
+    $("#addWebBtn").addEventListener("click", ()=>{
+      const url = $("#webUrl").value.trim();
+      if(!url){ showToast("Inserisci un URL."); return; }
+      sources.push({
+        id: uid(),
+        type: "web",
+        title: "Web",
+        desc: url,
+        url
+      });
+      $("#webUrl").value = "";
+      renderSources();
+      showToast("Pagina web aggiunta alle fonti.");
+    });
+
+    $("#addVideoBtn").addEventListener("click", ()=>{
+      const url = $("#videoUrl").value.trim();
+      if(!url){ showToast("Inserisci un URL."); return; }
+      sources.push({
+        id: uid(),
+        type: "video",
+        title: "Video",
+        desc: url,
+        url
+      });
+      $("#videoUrl").value = "";
+      renderSources();
+      showToast("Video aggiunto alle fonti.");
+    });
+
+    // ---------- Export / Import desk ----------
+    $("#exportBtn").addEventListener("click", ()=>{
+      const payload = {
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        cards: cards.map(c => ({...c})),
+        connectors: connectors.map(cn => ({...cn})),
+        // view not auto-restored (desk must open empty), but included for convenience
+        view: {...view}
+      };
+      downloadText(`desk-export-${Date.now()}.json`, JSON.stringify(payload, null, 2));
+      showToast("Export JSON pronto.");
+    });
+
+    $("#importFile").addEventListener("change", async (e)=>{
+      const file = e.target.files?.[0];
+      e.target.value = "";
+      if(!file) return;
+      try{
+        const text = await file.text();
+        const payload = JSON.parse(text);
+
+        if(!payload || !Array.isArray(payload.cards)) throw new Error("Formato non valido.");
+
+        // Replace current desk (but still: app opens empty by default; this is explicit load)
+        cards.length = 0;
+        connectors.length = 0;
+
+        for(const c of payload.cards){
+          cards.push(c);
+        }
+        for(const cn of (payload.connectors || [])){
+          connectors.push(cn);
+        }
+
+        selectedCardId = null;
+        renderCards();
+        showToast("Desk importato.");
+      }catch(err){
+        console.error(err);
+        showToast("Import fallito: file non valido.");
+      }
+    });
+
+    // ---------- Buttons ----------
+    $("#clearDeskBtn").addEventListener("click", ()=>{
+      if(confirm("Vuoi svuotare il desk (card + connettori)?")) clearDesk();
+    });
+    $("#clearSourcesBtn").addEventListener("click", ()=>{
+      if(confirm("Vuoi svuotare il deposito fonti?")) clearSources();
+    });
+
+    $("#delAllConn").addEventListener("click", ()=>{
+      if(confirm("Cancellare tutti i connettori?")) deleteAllConnectors();
+    });
+
+    $("#resetView").addEventListener("click", resetView);
+
+    $("#modeSelect").addEventListener("click", ()=> setMode("select"));
+    $("#modePan").addEventListener("click", ()=> setMode("pan"));
+    $("#modeConnect").addEventListener("click", ()=> setMode("connect"));
+    $("#modeDelete").addEventListener("click", ()=> setMode("delete"));
+
+    // ---------- Init ----------
+    // Open always clean: no auto-load.
+    resetView();
+    renderSources();
+    renderCards();
+    setMode("select");
+  </script>
+</body>
+</html>
