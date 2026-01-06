@@ -44,7 +44,7 @@
       overflow: hidden;
     }
 
-    /* Top bar */
+    /* Barra superiore */
     .topbar {
       height: 52px;
       padding: 0 14px;
@@ -121,7 +121,7 @@
       overflow: hidden;
     }
 
-    /* Sidebar: strumenti + fonti */
+    /* Sidebar */
     .sidebar {
       width: 260px;
       min-width: 230px;
@@ -203,10 +203,10 @@
       font-size: 14px;
     }
 
-    .tool-icon.text { background: rgba(59,130,246,0.12); color: #1d4ed8; }
+    .tool-icon.text  { background: rgba(59,130,246,0.12); color: #1d4ed8; }
     .tool-icon.image { background: rgba(16,185,129,0.12); color: #047857; }
-    .tool-icon.pdf { background: rgba(239,68,68,0.12); color: #b91c1c; }
-    .tool-icon.web { background: rgba(234,179,8,0.12); color: #92400e; }
+    .tool-icon.pdf   { background: rgba(239,68,68,0.12); color: #b91c1c; }
+    .tool-icon.web   { background: rgba(234,179,8,0.12);  color: #92400e; }
     .tool-icon.video { background: rgba(147,51,234,0.12); color: #6b21a8; }
 
     .tool-text-title {
@@ -308,7 +308,8 @@
       border: 1px solid rgba(148,163,184,0.4);
       box-shadow: 0 16px 36px rgba(15, 23, 42, 0.2);
       overflow: hidden;
-      touch-action: none; /* per drag/resize dentro il canvas */
+      position: relative;
+      touch-action: none; /* per drag/resize fluido su iPad */
     }
 
     .canvas-grid {
@@ -372,10 +373,6 @@
       box-shadow: 0 16px 40px rgba(249,115,22,0.35);
     }
 
-    .desk-card.maximized {
-      /* gestita via JS con left/top/width/height */
-    }
-
     .card-header {
       height: 34px;
       display: flex;
@@ -413,7 +410,7 @@
       white-space: nowrap;
       text-overflow: ellipsis;
       overflow: hidden;
-      max-width: 140px;
+      max-width: 120px;
     }
 
     .card-header-actions {
@@ -530,9 +527,9 @@
 
     .connector-handle {
       position: absolute;
-      width: 12px;
-      height: 12px;
-      right: -6px;
+      width: 14px;
+      height: 14px;
+      right: -7px;
       top: 50%;
       transform: translateY(-50%);
       border-radius: 999px;
@@ -549,8 +546,8 @@
 
     .connector-handle::before {
       content: "";
-      width: 4px;
-      height: 4px;
+      width: 5px;
+      height: 5px;
       border-radius: 999px;
       background: var(--accent);
     }
@@ -667,7 +664,7 @@
         <div class="sidebar-footer">
           ➜ Le fonti restano nel deposito.<br>
           ➜ Con “➕ Desk” le trasformi in card spostabili.<br>
-          ➜ Tap pallino blu per collegare le card.
+          ➜ Pallino blu → connetti le card.
         </div>
 
         <input type="file" id="input-image" accept="image/*">
@@ -675,7 +672,7 @@
       </aside>
 
       <section class="canvas" id="canvas">
-        <svg id="connector-layer" class="connector-layer" xmlns="http://www.w3.org/2000/svg"></svg>
+        <svg id="connector-layer" class="connector-layer" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"></svg>
         <div class="canvas-grid"></div>
       </section>
     </main>
@@ -710,6 +707,7 @@
       const hasPointer = window.PointerEvent !== undefined;
       const fonti = [];
 
+      /* --- Drag helper (mouse + touch + pointer) --- */
       function addDrag(handle, onStart, onMove, onEnd) {
         let active = false;
         let lastX = 0;
@@ -750,7 +748,7 @@
           });
           handle.addEventListener('pointerup', (e) => {
             end(e);
-            handle.releasePointerCapture(e.pointerId);
+            try { handle.releasePointerCapture(e.pointerId); } catch (_) {}
           });
           handle.addEventListener('pointercancel', (e) => {
             end(e);
@@ -827,13 +825,13 @@
         const canvasRect = canvas.getBoundingClientRect();
         if (!isMax) {
           const rect = card.getBoundingClientRect();
-          card.dataset.prevLeft = card.style.left || (rect.left - canvasRect.left) + 'px';
-          card.dataset.prevTop = card.style.top || (rect.top - canvasRect.top) + 'px';
-          card.dataset.prevWidth = card.style.width || rect.width + 'px';
-          card.dataset.prevHeight = card.style.height || rect.height + 'px';
+          card.dataset.prevLeft = card.style.left || (card.offsetLeft + 'px');
+          card.dataset.prevTop = card.style.top || (card.offsetTop + 'px');
+          card.dataset.prevWidth = card.style.width || (rect.width + 'px');
+          card.dataset.prevHeight = card.style.height || (rect.height + 'px');
 
-          const targetWidth = canvasRect.width * 0.8;
-          const targetHeight = canvasRect.height * 0.8;
+          const targetWidth = canvasRect.width * 0.85;
+          const targetHeight = canvasRect.height * 0.85;
           const left = (canvasRect.width - targetWidth) / 2;
           const top = (canvasRect.height - targetHeight) / 2;
 
@@ -849,16 +847,6 @@
           if (card.dataset.prevHeight) card.style.height = card.dataset.prevHeight;
           card.classList.remove('maximized');
         }
-        updateConnectors();
-      }
-
-      function centerCard(card) {
-        const rect = canvas.getBoundingClientRect();
-        const cardRect = card.getBoundingClientRect();
-        const left = rect.left + (rect.width - cardRect.width) / 2;
-        const top = rect.top + (rect.height - cardRect.height) / 2;
-        card.style.left = (left - rect.left) + 'px';
-        card.style.top = (top - rect.top) + 'px';
         updateConnectors();
       }
 
@@ -934,25 +922,32 @@
         connectors = [];
       }
 
+      /* QUI semplifico: uso offsetLeft/top (coordinate nel canvas) */
       function updateConnectors() {
-        const canvasRect = canvas.getBoundingClientRect();
         const toRemove = [];
 
         connectors.forEach(conn => {
           const fromCard = canvas.querySelector('.desk-card[data-card-id="' + conn.fromId + '"]');
-          const toCard = canvas.querySelector('.desk-card[data-card-id="' + conn.toId + '"]');
+          const toCard   = canvas.querySelector('.desk-card[data-card-id="' + conn.toId + '"]');
           if (!fromCard || !toCard) {
             toRemove.push(conn.id);
             return;
           }
 
-          const fromRect = fromCard.getBoundingClientRect();
-          const toRect = toCard.getBoundingClientRect();
+          const fromLeft = fromCard.offsetLeft;
+          const fromTop  = fromCard.offsetTop;
+          const fromW    = fromCard.offsetWidth;
+          const fromH    = fromCard.offsetHeight;
 
-          const startX = fromRect.right - canvasRect.left;
-          const startY = fromRect.top + fromRect.height / 2 - canvasRect.top;
-          const endX = toRect.left - canvasRect.left;
-          const endY = toRect.top + toRect.height / 2 - canvasRect.top;
+          const toLeft = toCard.offsetLeft;
+          const toTop  = toCard.offsetTop;
+          const toW    = toCard.offsetWidth;
+          const toH    = toCard.offsetHeight;
+
+          const startX = fromLeft + fromW;
+          const startY = fromTop + fromH / 2;
+          const endX   = toLeft;
+          const endY   = toTop + toH / 2;
 
           const offset = Math.max(40, Math.abs(endX - startX) / 3);
 
@@ -991,10 +986,10 @@
         const icon = document.createElement('div');
         icon.className = 'card-type-icon';
         icon.textContent =
-          type === 'text' ? 'T' :
+          type === 'text'  ? 'T' :
           type === 'image' ? 'IMG' :
-          type === 'pdf' ? 'PDF' :
-          type === 'web' ? 'WWW' :
+          type === 'pdf'   ? 'PDF' :
+          type === 'web'   ? 'WWW' :
           type === 'video' ? 'VID' : '?';
 
         const titleEl = document.createElement('div');
@@ -1009,13 +1004,13 @@
 
         const toggleButton = document.createElement('button');
         toggleButton.className = 'icon-button';
-        toggleButton.title = 'Apri/chiudi contenuto';
+        toggleButton.title = 'Apri/chiudi';
         toggleButton.innerHTML = '▾';
 
-        const centerButton = document.createElement('button');
-        centerButton.className = 'icon-button';
-        centerButton.title = 'Centra nel desk';
-        centerButton.innerHTML = '●';
+        const maxButton = document.createElement('button');
+        maxButton.className = 'icon-button';
+        maxButton.title = 'Ingrandisci/ripristina';
+        maxButton.innerHTML = '⤢';
 
         const closeButton = document.createElement('button');
         closeButton.className = 'icon-button danger';
@@ -1023,7 +1018,7 @@
         closeButton.innerHTML = '✕';
 
         headerActions.appendChild(toggleButton);
-        headerActions.appendChild(centerButton);
+        headerActions.appendChild(maxButton);
         headerActions.appendChild(closeButton);
 
         header.appendChild(headerLeft);
@@ -1049,57 +1044,49 @@
 
         canvas.appendChild(card);
 
-        // drag card
+        /* drag card */
         addDrag(
           header,
           () => bringToFront(card),
           (dx, dy) => {
-            const rect = card.getBoundingClientRect();
-            const canvasRect = canvas.getBoundingClientRect();
-            const left = rect.left - canvasRect.left + dx;
-            const top = rect.top - canvasRect.top + dy;
+            const left = card.offsetLeft + dx;
+            const top  = card.offsetTop  + dy;
             card.style.left = left + 'px';
-            card.style.top = top + 'px';
+            card.style.top  = top  + 'px';
             updateConnectors();
           }
         );
 
-        // resize
+        /* resize */
         addDrag(
           resize,
           () => bringToFront(card),
           (dx, dy) => {
-            const rect = card.getBoundingClientRect();
-            const newWidth = Math.max(220, rect.width + dx);
-            const newHeight = Math.max(140, rect.height + dy);
-            card.style.width = newWidth + 'px';
+            const newWidth  = Math.max(220, card.offsetWidth  + dx);
+            const newHeight = Math.max(140, card.offsetHeight + dy);
+            card.style.width  = newWidth  + 'px';
             card.style.height = newHeight + 'px';
             updateConnectors();
           }
         );
 
-        // selezione
+        /* selezione */
         card.addEventListener('pointerdown', () => bringToFront(card));
         card.addEventListener('mousedown', () => bringToFront(card));
 
-        // apri/chiudi
+        /* apri/chiudi contenuto */
         toggleButton.addEventListener('click', (e) => {
           e.stopPropagation();
           toggleCollapse(card, toggleButton);
         });
 
-        header.addEventListener('dblclick', (e) => {
+        /* ingrandisci/ripristina */
+        maxButton.addEventListener('click', (e) => {
           e.stopPropagation();
-          toggleCollapse(card, toggleButton);
+          toggleMaximize(card);
         });
 
-        // centrare
-        centerButton.addEventListener('click', (e) => {
-          e.stopPropagation();
-          centerCard(card);
-        });
-
-        // chiudere
+        /* chiudi card */
         closeButton.addEventListener('click', (e) => {
           e.stopPropagation();
           const id = card.dataset.cardId;
@@ -1109,7 +1096,7 @@
           updateConnectors();
         });
 
-        // connettori
+        /* connettore */
         connectorHandle.addEventListener('click', (e) => {
           e.stopPropagation();
           handleConnectorClick(card);
@@ -1139,36 +1126,19 @@
           img.className = 'card-image';
           img.src = fonte.dataUrl;
           bodyInner.appendChild(img);
-
-          // tap per ingrandire
-          bodyInner.addEventListener('click', () => {
-            toggleMaximize(card);
-          });
         } else if (fonte.type === 'pdf') {
           const iframe = document.createElement('iframe');
           iframe.className = 'card-embed';
           iframe.src = fonte.dataUrl;
           bodyInner.appendChild(iframe);
-
-          bodyInner.addEventListener('click', (e) => {
-            // evita che un singolo tap sul pdf faccia scroll invece di ingrandire
-            if (e.target === iframe) {
-              toggleMaximize(card);
-            }
-          });
         } else if (fonte.type === 'web' || fonte.type === 'video') {
           const iframe = document.createElement('iframe');
           iframe.className = 'card-iframe';
           iframe.src = fonte.url;
-          iframe.setAttribute('sandbox', 'allow-same-origin allow-scripts allow-forms allow-popups allow-presentation');
+          iframe.setAttribute('allowfullscreen', 'true');
+          iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share');
           bodyInner.appendChild(iframe);
           titleEl.textContent = fonte.shortTitle || baseTitle;
-
-          bodyInner.addEventListener('click', (e) => {
-            if (e.target === iframe) {
-              toggleMaximize(card);
-            }
-          });
         }
 
         bringToFront(card);
@@ -1190,8 +1160,8 @@
         icon.className = 'fonte-icon';
         icon.textContent =
           fonte.type === 'image' ? '🖼️' :
-          fonte.type === 'pdf' ? '📄' :
-          fonte.type === 'web' ? '🌐' :
+          fonte.type === 'pdf'   ? '📄' :
+          fonte.type === 'web'   ? '🌐' :
           fonte.type === 'video' ? '▶️' : '?';
 
         const title = document.createElement('div');
@@ -1230,13 +1200,13 @@
         });
       }
 
-      /* Pulsanti strumenti */
+      /* Strumenti */
 
       toolText.addEventListener('click', () => {
         createTextCard('Scrivi qui la tua nota…');
       });
 
-      // Immagine da device
+      // Immagine
       btnAddImage.addEventListener('click', () => {
         inputImage.value = '';
         inputImage.click();
@@ -1262,7 +1232,7 @@
         reader.readAsDataURL(file);
       });
 
-      // PDF da device
+      // PDF
       btnAddPdf.addEventListener('click', () => {
         inputPdf.value = '';
         inputPdf.click();
@@ -1336,7 +1306,7 @@
         clearAllConnectors();
       });
 
-      // all'avvio: nessuna card, nessuna fonte → desk pulito
+      // all’avvio: nessuna card, nessuna fonte → desk pulito
     })();
   </script>
 </body>
