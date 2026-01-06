@@ -13,51 +13,48 @@
       --bg1:#0b1220;
       --bg2:#111b31;
       --panel: rgba(255,255,255,.08);
-      --panel2: rgba(255,255,255,.12);
       --stroke: rgba(255,255,255,.14);
       --text: rgba(255,255,255,.92);
       --muted: rgba(255,255,255,.64);
       --shadow: 0 12px 40px rgba(0,0,0,.45);
-      --radius: 18px;
       --radius2: 22px;
       --accent: #6ae4ff;
       --danger: #ff5d6a;
-      --ok: #6cffb1;
-      --warn: #ffd36a;
     }
 
     *{ box-sizing:border-box; }
-    html,body{ height:100%; margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; color:var(--text); background: radial-gradient(1200px 800px at 15% 10%, #1b2a58 0%, transparent 55%),
-                                                                   radial-gradient(900px 650px at 75% 0%, #1a3b3b 0%, transparent 55%),
-                                                                   linear-gradient(160deg, var(--bg1), var(--bg2)); overflow:hidden; }
+    html,body{ height:100%; margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; color:var(--text);
+      background:
+        radial-gradient(1200px 800px at 15% 10%, #1b2a58 0%, transparent 55%),
+        radial-gradient(900px 650px at 75% 0%, #1a3b3b 0%, transparent 55%),
+        linear-gradient(160deg, var(--bg1), var(--bg2));
+      overflow:hidden;
+    }
 
-    /* App layout */
     .app{
       height:100%;
       display:grid;
-      grid-template-columns: 360px 1fr;
+      grid-template-columns: 370px 1fr;
       gap:14px;
       padding:14px;
       padding-bottom: max(14px, env(safe-area-inset-bottom));
     }
-
     @media (max-width: 900px){
-      .app{
-        grid-template-columns: 1fr;
-        grid-template-rows: auto 1fr;
-        overflow:hidden;
-      }
-      .left{ max-height: 44vh; }
+      .app{ grid-template-columns:1fr; grid-template-rows: auto 1fr; }
+      .left{ max-height: 48vh; }
     }
 
     .left, .main{
       border:1px solid var(--stroke);
-      background: linear-gradient(180deg, var(--panel), rgba(255,255,255,.05));
+      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.05));
       border-radius: var(--radius2);
       box-shadow: var(--shadow);
       overflow:hidden;
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
+      display:flex;
+      flex-direction:column;
+      min-height: 0;
     }
 
     .topbar{
@@ -65,32 +62,30 @@
       align-items:center;
       justify-content:space-between;
       gap:10px;
-      padding:12px 12px;
+      padding:12px;
       border-bottom:1px solid var(--stroke);
       background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
+      flex:0 0 auto;
     }
 
-    .brand{
-      display:flex; align-items:center; gap:10px;
-      font-weight:700;
-      letter-spacing:.2px;
-      white-space:nowrap;
-    }
-    .dot{
-      width:12px;height:12px;border-radius:999px;
-      background: radial-gradient(circle at 30% 30%, #fff, var(--accent));
+    .brand{ display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:.2px; white-space:nowrap; }
+    .dot{ width:12px;height:12px;border-radius:999px; background: radial-gradient(circle at 30% 30%, #fff, var(--accent));
       box-shadow: 0 0 0 4px rgba(106,228,255,.15), 0 0 24px rgba(106,228,255,.28);
     }
-    .sub{
-      font-size:12px; color:var(--muted); font-weight:500;
-    }
+    .sub{ font-size:12px; color:var(--muted); font-weight:600; }
 
-    .toolbar{
-      display:flex; flex-wrap:wrap; gap:8px;
-      padding:10px 12px;
-      border-bottom:1px solid var(--stroke);
-      background: rgba(0,0,0,.12);
+    .chip{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:8px 10px;
+      border:1px solid var(--stroke);
+      background: rgba(255,255,255,.05);
+      border-radius:999px;
+      font-size:12px;
+      font-weight:700;
+      color:var(--muted);
+      user-select:none;
     }
+    .chip strong{ color:var(--text); }
 
     .btn{
       appearance:none; border:1px solid var(--stroke);
@@ -98,7 +93,7 @@
       color:var(--text);
       padding:10px 10px;
       border-radius: 14px;
-      font-weight:650;
+      font-weight:750;
       font-size:13px;
       display:inline-flex;
       align-items:center;
@@ -116,50 +111,8 @@
     .btn.danger{ border-color: rgba(255,93,106,.35); background: rgba(255,93,106,.12); }
     .btn.danger:hover{ background: rgba(255,93,106,.18); }
 
-    .chip{
-      display:inline-flex; align-items:center; gap:8px;
-      padding:8px 10px;
-      border:1px solid var(--stroke);
-      background: rgba(255,255,255,.05);
-      border-radius:999px;
-      font-size:12px;
-      font-weight:650;
-      color:var(--muted);
-      user-select:none;
-    }
-    .chip strong{ color:var(--text); }
-
-    .seg{
-      display:flex; align-items:center; gap:8px; flex-wrap:wrap;
-    }
-    .mode{
-      display:flex; gap:6px; align-items:center;
-      padding:6px; border:1px solid var(--stroke);
-      border-radius: 14px; background: rgba(255,255,255,.05);
-    }
-    .mode .btn{ border-radius: 12px; padding:8px 10px; }
-    .mode .btn.active{
-      border-color: rgba(106,228,255,.5);
-      background: rgba(106,228,255,.18);
-      color: var(--text);
-    }
-
-    /* Left panel content */
-    .leftBody{
-      height: calc(100% - 54px);
-      display:flex;
-      flex-direction:column;
-      overflow:hidden;
-    }
-    .section{
-      padding:12px;
-      border-bottom:1px solid var(--stroke);
-    }
-    .section h3{
-      margin:0 0 10px 0;
-      font-size:13px; letter-spacing:.2px;
-      color: rgba(255,255,255,.84);
-    }
+    .section{ padding:12px; border-bottom:1px solid var(--stroke); flex:0 0 auto; }
+    .section h3{ margin:0 0 10px 0; font-size:13px; letter-spacing:.2px; color: rgba(255,255,255,.84); }
 
     .row{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
     .row + .row{ margin-top:8px; }
@@ -177,21 +130,10 @@
     }
     .input::placeholder{ color: rgba(255,255,255,.38); }
 
-    .color{
-      width:44px; height:40px;
-      border-radius: 14px;
-      border:1px solid var(--stroke);
-      background: rgba(0,0,0,.18);
-      padding:0;
-      overflow:hidden;
-    }
-    .color input{ width:100%; height:100%; border:0; padding:0; background:transparent; }
+    .note{ font-size:12px; color: rgba(255,255,255,.58); line-height:1.35; }
 
-    .sources{
-      padding:12px;
-      overflow:auto;
-      flex:1;
-    }
+    /* Sources list */
+    .sources{ padding:12px; overflow:auto; flex:1 1 auto; min-height: 0; }
     .sourceItem{
       border:1px solid var(--stroke);
       background: rgba(255,255,255,.06);
@@ -210,69 +152,48 @@
       overflow:hidden;
       display:flex; align-items:center; justify-content:center;
       color: rgba(255,255,255,.55);
-      font-weight:800;
+      font-weight:900;
       font-size:12px;
     }
-    .thumb img, .thumb canvas{ width:100%; height:100%; object-fit:cover; display:block; }
-    .meta{
-      display:flex;
-      flex-direction:column;
-      gap:8px;
-      min-width:0;
-    }
-    .meta .title{
-      font-size:13px;
-      font-weight:750;
-      overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-    }
-    .meta .type{
-      font-size:12px;
-      color: var(--muted);
-      overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-    }
+    .thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
+    .meta{ display:flex; flex-direction:column; gap:8px; min-width:0; }
+    .meta .title{ font-size:13px; font-weight:850; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .meta .type{ font-size:12px; color: var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
     .meta .actions{ display:flex; gap:8px; flex-wrap:wrap; }
 
-    .note{
-      font-size:12px;
-      color: rgba(255,255,255,.58);
-      line-height:1.35;
+    /* Main / desk */
+    .main{ display:flex; flex-direction:column; min-height:0; }
+
+    .mode{
+      display:flex; gap:6px; align-items:center;
+      padding:6px; border:1px solid var(--stroke);
+      border-radius: 14px; background: rgba(255,255,255,.05);
+      flex-wrap:wrap;
+    }
+    .mode .btn{ border-radius: 12px; padding:8px 10px; }
+    .mode .btn.active{ border-color: rgba(106,228,255,.5); background: rgba(106,228,255,.18); }
+
+    .toolbar{
+      display:flex; flex-wrap:wrap; gap:8px;
+      padding:10px 12px;
+      border-bottom:1px solid var(--stroke);
+      background: rgba(0,0,0,.12);
+      flex:0 0 auto;
     }
 
-    /* Main / desk */
-    .main{
-      display:flex;
-      flex-direction:column;
-      overflow:hidden;
-    }
-    .mainBody{
-      flex:1;
-      position:relative;
-      overflow:hidden;
+    .mainBody{ flex:1 1 auto; position:relative; overflow:hidden; min-height:0;
       background:
         radial-gradient(circle at 40% 20%, rgba(106,228,255,.10), transparent 40%),
         radial-gradient(circle at 80% 60%, rgba(108,255,177,.08), transparent 45%),
         linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
     }
 
-    .deskViewport{
-      position:absolute;
-      inset:0;
-      overflow:hidden;
-      touch-action: none; /* gesture custom */
-    }
+    .deskViewport{ position:absolute; inset:0; overflow:hidden; touch-action:none; }
+    .deskContent{ position:absolute; left:0; top:0; transform-origin:0 0; will-change: transform; }
 
-    .deskContent{
-      position:absolute;
-      left:0; top:0;
-      transform-origin: 0 0;
-      will-change: transform;
-    }
-
-    /* Grid effect */
     .gridLayer{
-      position:absolute;
-      left:0; top:0;
-      width: 8000px; height: 8000px;
+      position:absolute; left:0; top:0;
+      width:8000px; height:8000px;
       background-image:
         linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px),
         linear-gradient(to bottom, rgba(255,255,255,.06) 1px, transparent 1px);
@@ -281,8 +202,7 @@
       pointer-events:none;
     }
     .gridLayer:after{
-      content:"";
-      position:absolute; inset:0;
+      content:""; position:absolute; inset:0;
       background-image:
         linear-gradient(to right, rgba(255,255,255,.08) 1px, transparent 1px),
         linear-gradient(to bottom, rgba(255,255,255,.08) 1px, transparent 1px);
@@ -291,14 +211,8 @@
       pointer-events:none;
     }
 
-    .svgLayer{
-      position:absolute;
-      left:0; top:0;
-      width: 8000px; height: 8000px;
-      pointer-events:none;
-    }
+    .svgLayer{ position:absolute; left:0; top:0; width:8000px; height:8000px; pointer-events:none; }
 
-    /* Cards */
     .card{
       position:absolute;
       border:1px solid rgba(255,255,255,.18);
@@ -313,10 +227,8 @@
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
     }
-    .card.selected{
-      border-color: rgba(106,228,255,.55);
-      box-shadow: 0 18px 55px rgba(0,0,0,.55), 0 0 0 3px rgba(106,228,255,.12);
-    }
+    .card.selected{ border-color: rgba(106,228,255,.55); box-shadow: 0 18px 55px rgba(0,0,0,.55), 0 0 0 3px rgba(106,228,255,.12); }
+
     .cardHeader{
       height:38px;
       display:flex;
@@ -329,13 +241,9 @@
       cursor:grab;
     }
     .cardHeader:active{ cursor:grabbing; }
-    .cardHeader .lefty{
-      display:flex; align-items:center; gap:8px; min-width:0;
-    }
+
     .badge{
-      font-size:11px;
-      font-weight:800;
-      letter-spacing:.5px;
+      font-size:11px; font-weight:900; letter-spacing:.5px;
       color: rgba(255,255,255,.78);
       background: rgba(255,255,255,.10);
       border:1px solid rgba(255,255,255,.12);
@@ -343,13 +251,8 @@
       border-radius:999px;
       text-transform:uppercase;
     }
-    .cardTitle{
-      font-weight:800;
-      font-size:12.5px;
-      color: rgba(255,255,255,.92);
-      overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-      max-width: 240px;
-    }
+    .cardTitle{ font-weight:900; font-size:12.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width: 240px; }
+
     .cardBtns{ display:flex; gap:6px; }
     .iconBtn{
       width:30px; height:30px;
@@ -362,51 +265,29 @@
     .iconBtn:hover{ background: rgba(255,255,255,.10); }
     .iconBtn.danger:hover{ background: rgba(255,93,106,.15); border-color: rgba(255,93,106,.22); }
 
-    .cardBody{
-      height: calc(100% - 38px);
-      padding:10px;
-      overflow:hidden;
-      pointer-events:none; /* click handled by card container */
-    }
+    .cardBody{ height: calc(100% - 38px); padding:10px; overflow:hidden; pointer-events:none; }
     .preview{
-      width:100%;
-      height:100%;
+      width:100%; height:100%;
       border-radius: 14px;
       border:1px solid rgba(255,255,255,.12);
       background: rgba(0,0,0,.16);
       overflow:hidden;
-      display:flex;
-      align-items:center;
-      justify-content:center;
+      display:flex; align-items:center; justify-content:center;
       color: rgba(255,255,255,.60);
       font-size:12px;
       text-align:center;
       line-height:1.3;
     }
-    .preview img, .preview video, .preview iframe, .preview canvas{
-      width:100%;
-      height:100%;
-      object-fit:cover;
-      border:0;
-      display:block;
-    }
+    .preview img{ width:100%; height:100%; object-fit:cover; display:block; }
     .preview .snippet{
-      padding:10px;
-      text-align:left;
-      white-space:pre-wrap;
-      overflow:hidden;
-      display:-webkit-box;
-      -webkit-line-clamp: 6;
-      -webkit-box-orient: vertical;
+      padding:10px; text-align:left; white-space:pre-wrap; overflow:hidden;
+      display:-webkit-box; -webkit-line-clamp: 6; -webkit-box-orient: vertical;
       color: rgba(255,255,255,.78);
     }
 
     .resizeHandle{
-      position:absolute;
-      right:8px;
-      bottom:8px;
-      width:16px;
-      height:16px;
+      position:absolute; right:8px; bottom:8px;
+      width:16px; height:16px;
       border-radius: 6px;
       border:1px solid rgba(255,255,255,.18);
       background: rgba(255,255,255,.12);
@@ -414,17 +295,10 @@
       touch-action:none;
     }
 
+    .conn{ pointer-events: stroke; cursor:pointer; }
+
     /* Modal viewer */
-    .modal{
-      position:fixed;
-      inset:0;
-      background: rgba(0,0,0,.62);
-      display:none;
-      align-items:center;
-      justify-content:center;
-      padding: 14px;
-      z-index: 9999;
-    }
+    .modal{ position:fixed; inset:0; background: rgba(0,0,0,.62); display:none; align-items:center; justify-content:center; padding:14px; z-index:9999; }
     .modal.open{ display:flex; }
     .modalBox{
       width: min(1100px, 100%);
@@ -439,82 +313,21 @@
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
     }
-    .modalTop{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      padding:10px 12px;
-      border-bottom:1px solid rgba(255,255,255,.14);
-      background: rgba(0,0,0,.16);
-    }
-    .modalTop .title{
-      font-weight:900;
-      overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-    }
-    .modalBody{
-      flex:1;
-      background: rgba(0,0,0,.14);
-      overflow:auto;
-      padding:12px;
-    }
-    .viewer{
-      width:100%;
-      min-height: 100%;
-      border-radius: 18px;
-      border:1px solid rgba(255,255,255,.14);
-      background: rgba(0,0,0,.18);
-      overflow:hidden;
-    }
-    .viewer iframe, .viewer video{
-      width:100%;
-      height: 620px;
-      border:0;
-      display:block;
-      background: #000;
-    }
-    .viewer img{
-      width:100%;
-      height:auto;
-      display:block;
-    }
-    .viewer .text{
-      padding:14px;
-      white-space:pre-wrap;
-      color: rgba(255,255,255,.88);
-      line-height:1.45;
-      font-size: 15px;
-    }
-    .pdfWrap{
-      padding:12px;
-    }
-    .pdfPage{
-      margin: 10px auto 16px auto;
-      display:block;
-      border-radius: 14px;
-      overflow:hidden;
-      border:1px solid rgba(255,255,255,.14);
-      background: rgba(0,0,0,.15);
-      max-width: 980px;
-    }
-    .pdfPage canvas{
-      width:100%;
-      height:auto;
-      display:block;
-    }
+    .modalTop{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; border-bottom:1px solid rgba(255,255,255,.14); background: rgba(0,0,0,.16); }
+    .modalTop .title{ font-weight:950; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .modalBody{ flex:1; background: rgba(0,0,0,.14); overflow:auto; padding:12px; }
+    .viewer{ width:100%; min-height:100%; border-radius: 18px; border:1px solid rgba(255,255,255,.14); background: rgba(0,0,0,.18); overflow:hidden; }
+    .viewer iframe, .viewer video{ width:100%; height: 620px; border:0; display:block; background:#000; }
+    .viewer img{ width:100%; height:auto; display:block; }
+    .viewer .text{ padding:14px; white-space:pre-wrap; color: rgba(255,255,255,.88); line-height:1.45; font-size:15px; }
 
-    /* Connector lines */
-    .conn{
-      pointer-events: stroke;
-      cursor:pointer;
-    }
+    .pdfWrap{ padding:12px; }
+    .pdfPage{ margin: 10px auto 16px auto; display:block; border-radius: 14px; overflow:hidden; border:1px solid rgba(255,255,255,.14); background: rgba(0,0,0,.15); max-width: 980px; }
+    .pdfPage canvas{ width:100%; height:auto; display:block; }
 
     .toast{
-      position:absolute;
-      bottom:14px;
-      left:14px;
-      padding:10px 12px;
-      border-radius: 14px;
+      position:absolute; bottom:14px; left:14px;
+      padding:10px 12px; border-radius: 14px;
       background: rgba(0,0,0,.42);
       border:1px solid rgba(255,255,255,.16);
       color: rgba(255,255,255,.85);
@@ -527,7 +340,6 @@
     }
     .toast.show{ display:block; }
 
-    /* Hide default file input look */
     input[type="file"]{ display:none; }
   </style>
 </head>
@@ -543,84 +355,70 @@
         <div class="chip"><strong id="counts">0</strong> card</div>
       </div>
 
-      <div class="leftBody">
-        <div class="section">
-          <h3>Deposito fonti (vuoto all’avvio)</h3>
-
-          <div class="row">
-            <label class="btn small primary" for="imgFile">+ Immagine</label>
-            <input id="imgFile" type="file" accept="image/*" />
-            <label class="btn small primary" for="pdfFile">+ PDF</label>
-            <input id="pdfFile" type="file" accept="application/pdf" />
-          </div>
-
-          <div class="row">
-            <input id="textTitle" class="input" placeholder="Titolo testo (opzionale)" />
-            <button class="btn small primary" id="addTextBtn">+ Testo</button>
-          </div>
-
-          <div class="row">
-            <input id="webUrl" class="input" placeholder="URL pagina web (iframe se possibile)" />
-            <button class="btn small primary" id="addWebBtn">+ Web</button>
-          </div>
-
-          <div class="row">
-            <input id="videoUrl" class="input" placeholder="URL video (mp4 o YouTube)" />
-            <button class="btn small primary" id="addVideoBtn">+ Video</button>
-          </div>
-
-          <div class="row">
-            <div class="note">
-              Nota: alcuni siti bloccano l’iframe (CSP / X-Frame-Options). In quel caso usa “Apri in nuova scheda” nel viewer.
-            </div>
-          </div>
+      <!-- CREA CARD (direttamente) + DEPOSITO -->
+      <div class="section">
+        <h3>Crea card (subito sul desk)</h3>
+        <div class="row">
+          <label class="btn small primary" for="imgFile">+ Immagine</label>
+          <input id="imgFile" type="file" accept="image/*" />
+          <label class="btn small primary" for="pdfFile">+ PDF</label>
+          <input id="pdfFile" type="file" accept="application/pdf" />
         </div>
-
-        <div class="section">
-          <h3>Azioni (desk)</h3>
-          <div class="row">
-            <button class="btn small" id="exportBtn">Esporta JSON</button>
-            <label class="btn small" for="importFile">Importa JSON</label>
-            <input id="importFile" type="file" accept="application/json" />
-          </div>
-          <div class="row">
-            <button class="btn small danger" id="clearDeskBtn">Svuota desk</button>
-            <button class="btn small danger" id="clearSourcesBtn">Svuota fonti</button>
-          </div>
+        <div class="row">
+          <input id="webUrl" class="input" placeholder="URL pagina web" />
+          <button class="btn small primary" id="addWebBtn">+ Web</button>
         </div>
-
-        <div class="sources" id="sourcesList" aria-label="Fonti"></div>
+        <div class="row">
+          <input id="videoUrl" class="input" placeholder="URL video (mp4 o YouTube)" />
+          <button class="btn small primary" id="addVideoBtn">+ Video</button>
+        </div>
+        <div class="row">
+          <input id="textTitle" class="input" placeholder="Titolo testo (opzionale)" />
+          <button class="btn small primary" id="addTextBtn">+ Testo</button>
+        </div>
+        <div class="row"><div class="note">Suggerimento: dopo "Posiziona" tocca un punto vuoto del desk per piazzare la card lì.</div></div>
       </div>
+
+      <div class="section">
+        <h3>Azioni</h3>
+        <div class="row">
+          <button class="btn small" id="exportBtn">Esporta JSON</button>
+          <label class="btn small" for="importFile">Importa JSON</label>
+          <input id="importFile" type="file" accept="application/json" />
+        </div>
+        <div class="row">
+          <button class="btn small danger" id="clearDeskBtn">Svuota desk</button>
+          <button class="btn small danger" id="clearSourcesBtn">Svuota fonti</button>
+        </div>
+      </div>
+
+      <div class="sources" id="sourcesList" aria-label="Fonti"></div>
     </aside>
 
     <main class="main">
       <div class="topbar">
-        <div class="seg">
+        <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center;">
           <div class="mode" aria-label="Modalità">
             <button class="btn small active" id="modeSelect">Muovi</button>
             <button class="btn small" id="modePan">Pan</button>
             <button class="btn small" id="modeConnect">Connetti</button>
             <button class="btn small" id="modeDelete">Cancella</button>
           </div>
-
           <span class="chip">Zoom: <strong id="zoomPct">100%</strong></span>
-          <span class="chip">Pinch su iPad • wheel su desktop</span>
+          <span class="chip" id="placeChip" style="display:none;">Posizionamento: <strong id="placeLabel">—</strong></span>
         </div>
 
-        <div class="seg">
-          <div class="chip">
-            Connettori:
-            <span class="color" title="Colore connettori"><input id="connColor" type="color" value="#6ae4ff"></span>
-          </div>
+        <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:center;">
+          <span class="chip">Connettori: <input id="connColor" type="color" value="#6ae4ff" style="width:44px;height:34px;border:0;background:transparent;"></span>
           <button class="btn small danger" id="delAllConn">Cancella connettori</button>
           <button class="btn small" id="resetView">Reset vista</button>
         </div>
       </div>
 
       <div class="toolbar">
-        <span class="chip">Tap su una card: <strong>apri</strong></span>
-        <span class="chip">Trascina header: <strong>sposta</strong></span>
-        <span class="chip">Angolo in basso: <strong>ridimensiona</strong></span>
+        <span class="chip">Tap su card: <strong>apri</strong></span>
+        <span class="chip">Header: <strong>sposta</strong></span>
+        <span class="chip">Angolo: <strong>ridimensiona</strong></span>
         <span class="chip">Connetti: <strong>tocca 2 card</strong></span>
         <span class="chip">Cancella: <strong>tocca card/linea</strong></span>
       </div>
@@ -641,7 +439,7 @@
     <div class="modalBox">
       <div class="modalTop">
         <div class="title" id="modalTitle">Viewer</div>
-        <div class="seg">
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
           <button class="btn small" id="modalOpenNewTab" style="display:none;">Apri in nuova scheda</button>
           <button class="btn small danger" id="modalClose">Chiudi</button>
         </div>
@@ -657,50 +455,40 @@
     pdfjsLib.GlobalWorkerOptions.workerSrc =
       "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.7.76/build/pdf.worker.min.js";
 
-    // ---------- Utilities ----------
+    // ---------- Utils ----------
     const $ = (sel, el=document) => el.querySelector(sel);
     const $$ = (sel, el=document) => Array.from(el.querySelectorAll(sel));
     const uid = () => Math.random().toString(16).slice(2) + Date.now().toString(16);
+    const clamp = (v,a,b)=> Math.max(a, Math.min(b, v));
 
     function showToast(msg){
       const t = $("#toast");
       t.textContent = msg;
       t.classList.add("show");
       clearTimeout(showToast._tm);
-      showToast._tm = setTimeout(()=> t.classList.remove("show"), 2200);
+      showToast._tm = setTimeout(()=> t.classList.remove("show"), 2400);
     }
 
-    function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
+    function viewportRect(){ return deskViewport.getBoundingClientRect(); }
 
-    // IMPORTANT FIX:
-    // Our transforms are relative to #deskViewport, but pointer events use window client coords.
-    // So we must convert clientX/clientY <-> viewport-local coords using getBoundingClientRect().
-    const deskViewport = $("#deskViewport");
-    const deskContent  = $("#deskContent");
-    const svgLayer     = $("#svgLayer");
-    const sourcesList  = $("#sourcesList");
-
-    function viewportRect(){
-      return deskViewport.getBoundingClientRect();
-    }
+    // view state
+    const view = { scale: 1, tx: 60, ty: 60 };
 
     function screenToDesk(pt){
-      // pt is WINDOW client coords (clientX/clientY)
       const r = viewportRect();
-      const localX = pt.x - r.left;
-      const localY = pt.y - r.top;
-      return {
-        x: (localX - view.tx) / view.scale,
-        y: (localY - view.ty) / view.scale
-      };
+      const lx = pt.x - r.left;
+      const ly = pt.y - r.top;
+      return { x: (lx - view.tx)/view.scale, y: (ly - view.ty)/view.scale };
     }
 
-    function deskToScreen(pt){
-      const r = viewportRect();
-      return {
-        x: r.left + pt.x * view.scale + view.tx,
-        y: r.top  + pt.y * view.scale + view.ty
-      };
+    function applyTransform(){
+      deskContent.style.transform = `translate(${view.tx}px, ${view.ty}px) scale(${view.scale})`;
+      $("#zoomPct").textContent = Math.round(view.scale*100) + "%";
+    }
+
+    function resetView(){
+      view.scale = 1; view.tx = 60; view.ty = 60;
+      applyTransform();
     }
 
     function getYouTubeEmbed(url){
@@ -721,10 +509,7 @@
       }catch(e){}
       return null;
     }
-
-    function isLikelyMp4(url){
-      return /\.mp4(\?.*)?$/i.test(url);
-    }
+    const isLikelyMp4 = (url)=> /\.mp4(\?.*)?$/i.test(url);
 
     function downloadText(filename, text){
       const blob = new Blob([text], {type:"application/json"});
@@ -761,33 +546,41 @@
       return bytes.buffer;
     }
 
-    function escapeHtml(str){
-      return (str || "").replace(/[&<>\"']/g, (m)=>({
-        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
-      }[m]));
-    }
+    // ---------- Elements ----------
+    const deskViewport = $("#deskViewport");
+    const deskContent  = $("#deskContent");
+    const svgLayer     = $("#svgLayer");
+    const sourcesList  = $("#sourcesList");
 
     // ---------- State ----------
     const sources = [];
     const cards = [];
     const connectors = [];
-    let selectedCardId = null;
-
-    const view = {
-      scale: 1,
-      tx: 60,
-      ty: 60
-    };
 
     const app = {
-      mode: "select", // select | pan | connect | delete
+      mode: "select",          // select | pan | connect | delete
       connectFirst: null,
       pointers: new Map(),
-      pinch: null
+      pinch: null,
+      placeSourceId: null       // when set: tap desk to place a card
     };
 
-    function updateCounts(){
-      $("#counts").textContent = cards.length;
+    let selectedCardId = null;
+
+    function updateCounts(){ $("#counts").textContent = cards.length; }
+
+    function setPlace(sourceId){
+      app.placeSourceId = sourceId;
+      const s = sources.find(x=>x.id===sourceId);
+      if(!s) return;
+      $("#placeChip").style.display = "inline-flex";
+      $("#placeLabel").textContent = s.type.toUpperCase();
+      showToast("Tocca un punto vuoto del desk per piazzare la card.");
+    }
+
+    function clearPlace(){
+      app.placeSourceId = null;
+      $("#placeChip").style.display = "none";
     }
 
     function setMode(mode){
@@ -805,26 +598,14 @@
       if(mode==="select")  showToast("Muovi: trascina le card (header).");
     }
 
-    function applyTransform(){
-      deskContent.style.transform = `translate(${view.tx}px, ${view.ty}px) scale(${view.scale})`;
-      $("#zoomPct").textContent = Math.round(view.scale*100) + "%";
-    }
-
-    function resetView(){
-      view.scale = 1;
-      view.tx = 60;
-      view.ty = 60;
-      applyTransform();
-    }
-
-    // ---------- Rendering ----------
+    // ---------- Rendering sources ----------
     function renderSources(){
       sourcesList.innerHTML = "";
       if(sources.length === 0){
         const empty = document.createElement("div");
         empty.className = "note";
         empty.style.padding = "10px 2px";
-        empty.textContent = "Nessuna fonte nel deposito. Aggiungi immagini, PDF, testo, web o video qui sopra.";
+        empty.textContent = "Nessuna fonte nel deposito. Aggiungi qui sopra: la card appare subito sul desk e resta anche nel deposito.";
         sourcesList.appendChild(empty);
         return;
       }
@@ -836,15 +617,10 @@
 
         const t = document.createElement("div");
         t.className = "thumb";
-
         if(s.type === "image"){
-          const img = new Image();
-          img.src = s.dataUrl;
-          t.appendChild(img);
+          const img = new Image(); img.src = s.dataUrl; t.appendChild(img);
         }else if(s.type === "pdf" && s.thumbDataUrl){
-          const img = new Image();
-          img.src = s.thumbDataUrl;
-          t.appendChild(img);
+          const img = new Image(); img.src = s.thumbDataUrl; t.appendChild(img);
         }else{
           t.textContent = s.type.toUpperCase();
         }
@@ -863,10 +639,15 @@
         const actions = document.createElement("div");
         actions.className = "actions";
 
-        const add = document.createElement("button");
-        add.className = "btn small primary";
-        add.textContent = "Aggiungi al desk";
-        add.onclick = ()=> addCardFromSource(s.id);
+        const place = document.createElement("button");
+        place.className = "btn small primary";
+        place.textContent = "Posiziona";
+        place.onclick = ()=> setPlace(s.id);
+
+        const addCenter = document.createElement("button");
+        addCenter.className = "btn small";
+        addCenter.textContent = "Aggiungi al centro";
+        addCenter.onclick = ()=> addCardFromSource(s.id, null);
 
         const del = document.createElement("button");
         del.className = "btn small danger";
@@ -874,10 +655,12 @@
         del.onclick = ()=> {
           const idx = sources.findIndex(x=>x.id===s.id);
           if(idx>=0) sources.splice(idx,1);
+          if(app.placeSourceId === s.id) clearPlace();
           renderSources();
         };
 
-        actions.appendChild(add);
+        actions.appendChild(place);
+        actions.appendChild(addCenter);
         actions.appendChild(del);
 
         meta.appendChild(title);
@@ -886,11 +669,11 @@
 
         wrap.appendChild(t);
         wrap.appendChild(meta);
-
         sourcesList.appendChild(wrap);
       }
     }
 
+    // ---------- Rendering cards ----------
     function renderCards(){
       $$(".card", deskContent).forEach(n => n.remove());
 
@@ -908,7 +691,10 @@
         header.className = "cardHeader";
 
         const lefty = document.createElement("div");
-        lefty.className = "lefty";
+        lefty.style.display = "flex";
+        lefty.style.alignItems = "center";
+        lefty.style.gap = "8px";
+        lefty.style.minWidth = "0";
 
         const badge = document.createElement("div");
         badge.className = "badge";
@@ -948,34 +734,24 @@
         prev.className = "preview";
 
         if(c.type === "image"){
-          const img = new Image();
-          img.src = c.dataUrl;
-          prev.appendChild(img);
+          const img = new Image(); img.src = c.dataUrl; prev.appendChild(img);
         }else if(c.type === "text"){
-          const sn = document.createElement("div");
-          sn.className = "snippet";
-          sn.textContent = c.text || "";
-          prev.appendChild(sn);
+          const sn = document.createElement("div"); sn.className = "snippet"; sn.textContent = c.text || ""; prev.appendChild(sn);
         }else if(c.type === "pdf"){
-          if(c.thumbDataUrl){
-            const img = new Image();
-            img.src = c.thumbDataUrl;
-            prev.appendChild(img);
-          }else{
-            prev.textContent = "PDF";
-          }
+          if(c.thumbDataUrl){ const img = new Image(); img.src = c.thumbDataUrl; prev.appendChild(img); }
+          else prev.textContent = "PDF";
         }else if(c.type === "web"){
-          prev.innerHTML = `<div style="padding:12px;">
-              <div style="font-weight:900; margin-bottom:6px;">🌐 Pagina web</div>
-              <div style="color:rgba(255,255,255,.7); font-size:12px; word-break:break-word;">${escapeHtml(c.url)}</div>
-              <div style="color:rgba(255,255,255,.55); font-size:12px; margin-top:10px;">Apri per navigare</div>
-            </div>`;
+          prev.innerHTML = `<div style="padding:12px;text-align:left;">
+            <div style="font-weight:950; margin-bottom:6px;">🌐 Pagina web</div>
+            <div style="opacity:.75; font-size:12px; word-break:break-word;">${(c.url||"").replaceAll("<","&lt;")}</div>
+            <div style="opacity:.55; font-size:12px; margin-top:10px;">Apri per navigare</div>
+          </div>`;
         }else if(c.type === "video"){
-          prev.innerHTML = `<div style="padding:12px;">
-              <div style="font-weight:900; margin-bottom:6px;">▶ Video</div>
-              <div style="color:rgba(255,255,255,.7); font-size:12px; word-break:break-word;">${escapeHtml(c.url)}</div>
-              <div style="color:rgba(255,255,255,.55); font-size:12px; margin-top:10px;">Apri per avviare</div>
-            </div>`;
+          prev.innerHTML = `<div style="padding:12px;text-align:left;">
+            <div style="font-weight:950; margin-bottom:6px;">▶ Video</div>
+            <div style="opacity:.75; font-size:12px; word-break:break-word;">${(c.url||"").replaceAll("<","&lt;")}</div>
+            <div style="opacity:.55; font-size:12px; margin-top:10px;">Apri per avviare</div>
+          </div>`;
         }else{
           prev.textContent = "Contenuto";
         }
@@ -991,16 +767,10 @@
         el.appendChild(handle);
 
         el.addEventListener("pointerdown", (e)=> onCardPointerDown(e, c.id, header, handle));
-        el.addEventListener("click", (e)=> {
+        el.addEventListener("click", (e)=>{
           if(e.defaultPrevented) return;
-          if(app.mode === "delete"){
-            deleteCard(c.id);
-            return;
-          }
-          if(app.mode === "connect"){
-            connectClick(c.id);
-            return;
-          }
+          if(app.mode === "delete"){ deleteCard(c.id); return; }
+          if(app.mode === "connect"){ connectClick(c.id); return; }
           if(e.target.classList.contains("iconBtn")) return;
           openCard(c.id);
         });
@@ -1021,10 +791,8 @@
         const b = cards.find(x=>x.id===cn.b);
         if(!a || !b) continue;
 
-        const ax = a.x + a.w/2;
-        const ay = a.y + a.h/2;
-        const bx = b.x + b.w/2;
-        const by = b.y + b.h/2;
+        const ax = a.x + a.w/2, ay = a.y + a.h/2;
+        const bx = b.x + b.w/2, by = b.y + b.h/2;
 
         const dx = Math.abs(bx-ax);
         const c1x = ax + (bx>ax ? dx*0.35 : -dx*0.35);
@@ -1068,44 +836,39 @@
       }
     }
 
-    // ---------- Card operations ----------
-    function addCardFromSource(sourceId){
+    // ---------- Card creation ----------
+    function addCardFromSource(sourceId, atDeskPoint){
       const s = sources.find(x=>x.id===sourceId);
       if(!s) return;
 
-      // FIX: use WINDOW coords at center of deskViewport
-      const r = viewportRect();
-      const centerClient = { x: r.left + r.width/2, y: r.top + r.height/2 };
-      const center = screenToDesk(centerClient);
+      const pt = atDeskPoint || (()=>{
+        const r = viewportRect();
+        return screenToDesk({x: r.left + r.width/2, y: r.top + r.height/2});
+      })();
 
       const card = {
         id: uid(),
         type: s.type,
         title: s.title || s.type.toUpperCase(),
-        x: clamp(center.x - 180, 0, 7600),
-        y: clamp(center.y - 120, 0, 7600),
+        x: clamp(pt.x - 180, 0, 7600),
+        y: clamp(pt.y - 120, 0, 7600),
         w: (s.type==="text") ? 340 : 360,
         h: (s.type==="image") ? 260 : (s.type==="pdf" ? 300 : 240),
       };
 
-      if(s.type==="image"){
-        card.dataUrl = s.dataUrl;
-      }else if(s.type==="pdf"){
+      if(s.type==="image") card.dataUrl = s.dataUrl;
+      if(s.type==="pdf"){
         card.pdfBase64 = s.pdfBase64;
         card.fileName = s.fileName || "documento.pdf";
         card.thumbDataUrl = s.thumbDataUrl || null;
-      }else if(s.type==="text"){
-        card.text = s.text || "";
-      }else if(s.type==="web"){
-        card.url = s.url;
-      }else if(s.type==="video"){
-        card.url = s.url;
       }
+      if(s.type==="text") card.text = s.text || "";
+      if(s.type==="web")  card.url = s.url;
+      if(s.type==="video") card.url = s.url;
 
       cards.push(card);
       selectedCardId = card.id;
       renderCards();
-      showToast("Aggiunto al desk.");
     }
 
     function deleteCard(cardId){
@@ -1129,6 +892,7 @@
 
     function clearSources(){
       sources.length = 0;
+      clearPlace();
       renderSources();
       showToast("Fonti svuotate.");
     }
@@ -1142,24 +906,12 @@
         showToast("Ora tocca la seconda card…");
         return;
       }
-      if(app.connectFirst === cardId){
-        showToast("Scegli una card diversa.");
-        return;
-      }
+      if(app.connectFirst === cardId){ showToast("Scegli una card diversa."); return; }
       const exists = connectors.some(cn =>
         (cn.a===app.connectFirst && cn.b===cardId) || (cn.a===cardId && cn.b===app.connectFirst)
       );
-      if(exists){
-        showToast("Connettore già presente.");
-        app.connectFirst = null;
-        return;
-      }
-      connectors.push({
-        id: uid(),
-        a: app.connectFirst,
-        b: cardId,
-        color: $("#connColor").value
-      });
+      if(exists){ showToast("Connettore già presente."); app.connectFirst = null; return; }
+      connectors.push({ id: uid(), a: app.connectFirst, b: cardId, color: $("#connColor").value });
       app.connectFirst = null;
       renderConnectors();
       showToast("Connettore creato.");
@@ -1171,17 +923,15 @@
       showToast("Connettori cancellati.");
     }
 
-    // ---------- Drag / Resize on cards ----------
+    // ---------- Drag / Resize ----------
     let drag = null;
 
     function onCardPointerDown(e, cardId, headerEl, handleEl){
       if(e.target.classList.contains("iconBtn")) return;
-
       const c = cards.find(x=>x.id===cardId);
       if(!c) return;
 
-      if(app.mode === "delete") return;
-      if(app.mode === "connect") return;
+      if(app.mode === "delete" || app.mode === "connect") return;
 
       selectedCardId = cardId;
       renderCards();
@@ -1220,6 +970,7 @@
           c.w = clamp(drag.startW + dx, 180, 900);
           c.h = clamp(drag.startH + dy, 120, 780);
         }
+
         const el = $(`.card[data-id="${cardId}"]`, deskContent);
         if(el){
           el.style.left = c.x + "px";
@@ -1242,7 +993,7 @@
       window.addEventListener("pointerup", onUp, {passive:false});
     }
 
-    // ---------- Desk pan / zoom ----------
+    // ---------- Desk pan / zoom + PLACE ON TAP ----------
     deskViewport.addEventListener("pointerdown", (e)=>{
       if(e.target.closest(".card")) return;
 
@@ -1252,19 +1003,9 @@
       if(app.pointers.size === 2){
         const pts = Array.from(app.pointers.values());
         const dist = Math.hypot(pts[1].x-pts[0].x, pts[1].y-pts[0].y);
-        const mid  = {x:(pts[0].x+pts[1].x)/2, y:(pts[0].y+pts[1].y)/2};
-        app.pinch = {
-          startDist: dist,
-          startScale: view.scale,
-          startTx: view.tx,
-          startTy: view.ty,
-          mid
-        };
+        app.pinch = { startDist: dist, startScale: view.scale };
       }else{
-        if(app.mode === "pan"){
-          app.pinch = app.pinch || {};
-          app.pinch.panStart = {x:e.clientX, y:e.clientY, tx:view.tx, ty:view.ty};
-        }
+        if(app.mode === "pan") app.pinch = { panStart: {x:e.clientX, y:e.clientY, tx:view.tx, ty:view.ty} };
       }
     }, {passive:false});
 
@@ -1272,22 +1013,12 @@
       if(!app.pointers.has(e.pointerId)) return;
       app.pointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
 
-      if(app.pointers.size === 2 && app.pinch){
+      if(app.pointers.size === 2 && app.pinch && app.pinch.startDist){
         e.preventDefault();
         const pts = Array.from(app.pointers.values());
         const dist = Math.hypot(pts[1].x-pts[0].x, pts[1].y-pts[0].y);
-        const mid  = {x:(pts[0].x+pts[1].x)/2, y:(pts[0].y+pts[1].y)/2};
-
         const factor = dist / app.pinch.startDist;
-        const newScale = clamp(app.pinch.startScale * factor, 0.35, 2.5);
-
-        const before = screenToDesk(mid);
-        view.scale = newScale;
-        const after = screenToDesk(mid);
-
-        view.tx += (after.x - before.x) * view.scale;
-        view.ty += (after.y - before.y) * view.scale;
-
+        view.scale = clamp(app.pinch.startScale * factor, 0.35, 2.5);
         applyTransform();
         return;
       }
@@ -1295,10 +1026,8 @@
       if(app.mode === "pan" && app.pinch && app.pinch.panStart){
         e.preventDefault();
         const p0 = app.pinch.panStart;
-        const dx = e.clientX - p0.x;
-        const dy = e.clientY - p0.y;
-        view.tx = p0.tx + dx;
-        view.ty = p0.ty + dy;
+        view.tx = p0.tx + (e.clientX - p0.x);
+        view.ty = p0.ty + (e.clientY - p0.y);
         applyTransform();
       }
     }, {passive:false});
@@ -1316,25 +1045,34 @@
       e.preventDefault();
       const delta = -e.deltaY;
       const zoom = delta > 0 ? 1.08 : 0.92;
-
-      const mouse = {x:e.clientX, y:e.clientY};
-      const before = screenToDesk(mouse);
-
+      const pt = screenToDesk({x:e.clientX, y:e.clientY});
       view.scale = clamp(view.scale * zoom, 0.35, 2.5);
-
-      const after = screenToDesk(mouse);
-      view.tx += (after.x - before.x) * view.scale;
-      view.ty += (after.y - before.y) * view.scale;
-
+      // keep mouse point stable
+      const r = viewportRect();
+      const lx = e.clientX - r.left;
+      const ly = e.clientY - r.top;
+      view.tx = lx - pt.x * view.scale;
+      view.ty = ly - pt.y * view.scale;
       applyTransform();
     }, {passive:false});
 
     deskViewport.addEventListener("click", (e)=>{
       if(e.target.closest(".card")) return;
+
+      // PLACE MODE: tap on desk to create the card here
+      if(app.placeSourceId){
+        const pt = screenToDesk({x:e.clientX, y:e.clientY});
+        addCardFromSource(app.placeSourceId, pt);
+        clearPlace();
+        showToast("Card piazzata.");
+        return;
+      }
+
       if(app.mode === "connect"){
         app.connectFirst = null;
         showToast("Selezione connettore annullata.");
       }
+
       selectedCardId = null;
       renderCards();
     });
@@ -1353,15 +1091,10 @@
       $("#modalOpenNewTab").onclick = null;
 
       if(c.type === "image"){
-        const img = new Image();
-        img.src = c.dataUrl;
-        viewer.appendChild(img);
+        const img = new Image(); img.src = c.dataUrl; viewer.appendChild(img);
       }
       else if(c.type === "text"){
-        const d = document.createElement("div");
-        d.className = "text";
-        d.textContent = c.text || "";
-        viewer.appendChild(d);
+        const d = document.createElement("div"); d.className = "text"; d.textContent = c.text || ""; viewer.appendChild(d);
       }
       else if(c.type === "web"){
         const url = c.url;
@@ -1371,7 +1104,6 @@
         iframe.referrerPolicy = "no-referrer";
         iframe.allowFullscreen = true;
         viewer.appendChild(iframe);
-
         $("#modalOpenNewTab").style.display = "inline-flex";
         $("#modalOpenNewTab").onclick = ()=> window.open(url, "_blank", "noopener,noreferrer");
       }
@@ -1396,7 +1128,6 @@
           iframe.allow = "autoplay; encrypted-media; fullscreen";
           iframe.allowFullscreen = true;
           viewer.appendChild(iframe);
-
           $("#modalOpenNewTab").style.display = "inline-flex";
           $("#modalOpenNewTab").onclick = ()=> window.open(url, "_blank", "noopener,noreferrer");
         }
@@ -1404,7 +1135,7 @@
       else if(c.type === "pdf"){
         const note = document.createElement("div");
         note.className = "note";
-        note.style.padding = "6px 2px 10px 2px";
+        note.style.padding = "8px 12px";
         note.textContent = "PDF multipagina: scroll verticale.";
         viewer.appendChild(note);
 
@@ -1436,18 +1167,19 @@
         wrap.className = "pdfWrap";
         mount.appendChild(wrap);
 
+        const maxW = Math.min(980, mount.clientWidth - 60);
+
         for(let pageNum=1; pageNum<=pdf.numPages; pageNum++){
           const page = await pdf.getPage(pageNum);
           const viewport = page.getViewport({scale: 1});
-          const maxW = Math.min(980, mount.clientWidth - 60);
           const scale = maxW / viewport.width;
+          const vp = page.getViewport({scale});
 
-          const vp = page.getViewport({scale: scale});
           const canvas = document.createElement("canvas");
           canvas.width = Math.floor(vp.width);
           canvas.height = Math.floor(vp.height);
+          const ctx = canvas.getContext("2d", {alpha:false});
 
-          const ctx = canvas.getPcontext ? canvas.getPcontext("2d", {alpha:false}) : canvas.getContext("2d", {alpha:false});
           await page.render({canvasContext: ctx, viewport: vp}).promise;
 
           const box = document.createElement("div");
@@ -1465,23 +1197,19 @@
       }
     }
 
-    // ---------- Import sources ----------
+    // ---------- Create sources + AUTO-ADD card ----------
     $("#imgFile").addEventListener("change", async (e)=>{
       const file = e.target.files?.[0];
       e.target.value = "";
       if(!file) return;
+
       const dataUrl = await fileToBase64(file);
-
-      sources.push({
-        id: uid(),
-        type: "image",
-        title: file.name,
-        desc: "Immagine",
-        dataUrl
-      });
-
+      const s = { id: uid(), type:"image", title: file.name, desc:"Immagine", dataUrl };
+      sources.unshift(s);
       renderSources();
-      showToast("Immagine aggiunta alle fonti.");
+
+      addCardFromSource(s.id, null);
+      showToast("Immagine: card creata sul desk.");
     });
 
     $("#pdfFile").addEventListener("change", async (e)=>{
@@ -1507,18 +1235,12 @@
         console.warn("PDF thumb failed", err);
       }
 
-      sources.push({
-        id: uid(),
-        type: "pdf",
-        title: file.name,
-        desc: "PDF (multipagina)",
-        fileName: file.name,
-        pdfBase64,
-        thumbDataUrl
-      });
-
+      const s = { id: uid(), type:"pdf", title: file.name, desc:"PDF (multipagina)", fileName:file.name, pdfBase64, thumbDataUrl };
+      sources.unshift(s);
       renderSources();
-      showToast("PDF aggiunto alle fonti.");
+
+      addCardFromSource(s.id, null);
+      showToast("PDF: card creata sul desk.");
     });
 
     $("#addTextBtn").addEventListener("click", ()=>{
@@ -1526,41 +1248,45 @@
       const txt = prompt("Incolla il testo (puoi anche scrivere tanto):");
       if(txt === null) return;
 
-      sources.push({
-        id: uid(),
-        type: "text",
-        title,
-        desc: "Testo",
-        text: txt
-      });
-
+      const s = { id: uid(), type:"text", title, desc:"Testo", text: txt };
+      sources.unshift(s);
       $("#textTitle").value = "";
       renderSources();
-      showToast("Testo aggiunto alle fonti.");
+
+      addCardFromSource(s.id, null);
+      showToast("Testo: card creata sul desk.");
     });
 
     $("#addWebBtn").addEventListener("click", ()=>{
-      const url = $("#webUrl").value.trim();
+      let url = $("#webUrl").value.trim();
       if(!url){ showToast("Inserisci un URL."); return; }
-      sources.push({ id: uid(), type: "web", title: "Web", desc: url, url });
+      if(!/^https?:\/\//i.test(url)) url = "https://" + url;
+      const s = { id: uid(), type:"web", title:"Web", desc:url, url };
+      sources.unshift(s);
       $("#webUrl").value = "";
       renderSources();
-      showToast("Pagina web aggiunta alle fonti.");
+
+      addCardFromSource(s.id, null);
+      showToast("Web: card creata sul desk.");
     });
 
     $("#addVideoBtn").addEventListener("click", ()=>{
-      const url = $("#videoUrl").value.trim();
+      let url = $("#videoUrl").value.trim();
       if(!url){ showToast("Inserisci un URL."); return; }
-      sources.push({ id: uid(), type: "video", title: "Video", desc: url, url });
+      if(!/^https?:\/\//i.test(url)) url = "https://" + url;
+      const s = { id: uid(), type:"video", title:"Video", desc:url, url };
+      sources.unshift(s);
       $("#videoUrl").value = "";
       renderSources();
-      showToast("Video aggiunto alle fonti.");
+
+      addCardFromSource(s.id, null);
+      showToast("Video: card creata sul desk.");
     });
 
-    // ---------- Export / Import desk ----------
+    // ---------- Export / Import ----------
     $("#exportBtn").addEventListener("click", ()=>{
       const payload = {
-        version: 1,
+        version: 2,
         exportedAt: new Date().toISOString(),
         cards: cards.map(c => ({...c})),
         connectors: connectors.map(cn => ({...cn})),
@@ -1577,14 +1303,11 @@
       try{
         const text = await file.text();
         const payload = JSON.parse(text);
-        if(!payload || !Array.isArray(payload.cards)) throw new Error("Formato non valido.");
-
+        if(!payload || !Array.isArray(payload.cards)) throw new Error("Formato non valido");
         cards.length = 0;
         connectors.length = 0;
-
         for(const c of payload.cards) cards.push(c);
         for(const cn of (payload.connectors || [])) connectors.push(cn);
-
         selectedCardId = null;
         renderCards();
         showToast("Desk importato.");
@@ -1595,17 +1318,9 @@
     });
 
     // ---------- Buttons ----------
-    $("#clearDeskBtn").addEventListener("click", ()=>{
-      if(confirm("Vuoi svuotare il desk (card + connettori)?")) clearDesk();
-    });
-    $("#clearSourcesBtn").addEventListener("click", ()=>{
-      if(confirm("Vuoi svuotare il deposito fonti?")) clearSources();
-    });
-
-    $("#delAllConn").addEventListener("click", ()=>{
-      if(confirm("Cancellare tutti i connettori?")) deleteAllConnectors();
-    });
-
+    $("#clearDeskBtn").addEventListener("click", ()=>{ if(confirm("Vuoi svuotare il desk (card + connettori)?")) clearDesk(); });
+    $("#clearSourcesBtn").addEventListener("click", ()=>{ if(confirm("Vuoi svuotare il deposito fonti?")) clearSources(); });
+    $("#delAllConn").addEventListener("click", ()=>{ if(confirm("Cancellare tutti i connettori?")) deleteAllConnectors(); });
     $("#resetView").addEventListener("click", resetView);
 
     $("#modeSelect").addEventListener("click", ()=> setMode("select"));
