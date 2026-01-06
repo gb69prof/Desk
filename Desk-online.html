@@ -5,8 +5,11 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>Interactive Desk — GitHub Pages</title>
 
-  <!-- PDF.js (CDN) -->
-  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.7.76/build/pdf.min.js"></script>
+  <!-- PDF.js (CDN)
+       NOTE: usa la build "legacy" per avere la variabile globale window.pdfjsLib.
+       La build moderna (ESM) spesso NON espone pdfjsLib come globale e su Safari può risultare undefined.
+  -->
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.7.76/legacy/build/pdf.min.js"></script>
 
   <style>
     :root{
@@ -451,9 +454,19 @@
   </div>
 
   <script>
-    // ---------- PDF.js setup ----------
-    pdfjsLib.GlobalWorkerOptions.workerSrc =
-      "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.7.76/build/pdf.worker.min.js";
+    // ---------- PDF.js setup (robusto) ----------
+    // Se per qualsiasi motivo pdfjsLib non viene caricato (CSP, CDN bloccato, ecc.)
+    // l'app NON deve crashare: i PDF si apriranno comunque in nuova scheda.
+    const PDFJS = (typeof window !== "undefined") ? window.pdfjsLib : undefined;
+    const pdfEnabled = !!(PDFJS && typeof PDFJS.getDocument === "function");
+
+    if(pdfEnabled){
+      PDFJS.GlobalWorkerOptions.workerSrc =
+        "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.7.76/legacy/build/pdf.worker.min.js";
+    } else {
+      // Non lanciare errori: degradare in modo elegante.
+      console.warn("PDF.js non disponibile: anteprime e rendering PDF disabilitati. (Apri in nuova scheda resta attivo.)");
+    }
 
     // ---------- Utils ----------
     const $ = (sel, el=document) => el.querySelector(sel);
@@ -1136,7 +1149,9 @@
         const note = document.createElement("div");
         note.className = "note";
         note.style.padding = "8px 12px";
-        note.textContent = "PDF multipagina: scroll verticale.";
+        note.textContent = pdfEnabled
+          ? "PDF multipagina: scroll verticale."
+          : "PDF: anteprima disabilitata (PDF.js non disponibile). Apri in nuova scheda.";
         viewer.appendChild(note);
 
         $("#modalOpenNewTab").style.display = "inline-flex";
@@ -1148,7 +1163,9 @@
           setTimeout(()=> URL.revokeObjectURL(urlObj), 8000);
         };
 
-        renderPdfToViewer(c.pdfBase64, viewer);
+        if(pdfEnabled){
+          renderPdfToViewer(c.pdfBase64, viewer);
+        }
       }
 
       modal.classList.add("open");
@@ -1158,9 +1175,10 @@
     modal.addEventListener("click", (e)=>{ if(e.target===modal) modal.classList.remove("open"); });
 
     async function renderPdfToViewer(pdfBase64, mount){
+      if(!pdfEnabled) return;
       try{
         const buf = base64ToArrayBuffer(pdfBase64);
-        const loadingTask = pdfjsLib.getDocument({data: buf});
+        const loadingTask = PDFJS.getDocument({data: buf});
         const pdf = await loadingTask.promise;
 
         const wrap = document.createElement("div");
@@ -1221,18 +1239,20 @@
       const pdfBase64 = arrayBufferToBase64(arrayBuf);
 
       let thumbDataUrl = null;
-      try{
-        const pdf = await pdfjsLib.getDocument({data: arrayBuf}).promise;
-        const page = await pdf.getPage(1);
-        const vp1 = page.getViewport({scale: 0.35});
-        const canvas = document.createElement("canvas");
-        canvas.width = Math.floor(vp1.width);
-        canvas.height = Math.floor(vp1.height);
-        const ctx = canvas.getContext("2d", {alpha:false});
-        await page.render({canvasContext: ctx, viewport: vp1}).promise;
-        thumbDataUrl = canvas.toDataURL("image/jpeg", 0.82);
-      }catch(err){
-        console.warn("PDF thumb failed", err);
+      if(pdfEnabled){
+        try{
+          const pdf = await PDFJS.getDocument({data: arrayBuf}).promise;
+          const page = await pdf.getPage(1);
+          const vp1 = page.getViewport({scale: 0.35});
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.floor(vp1.width);
+          canvas.height = Math.floor(vp1.height);
+          const ctx = canvas.getContext("2d", {alpha:false});
+          await page.render({canvasContext: ctx, viewport: vp1}).promise;
+          thumbDataUrl = canvas.toDataURL("image/jpeg", 0.82);
+        }catch(err){
+          console.warn("PDF thumb failed", err);
+        }
       }
 
       const s = { id: uid(), type:"pdf", title: file.name, desc:"PDF (multipagina)", fileName:file.name, pdfBase64, thumbDataUrl };
@@ -1240,7 +1260,7 @@
       renderSources();
 
       addCardFromSource(s.id, null);
-      showToast("PDF: card creata sul desk.");
+      showToast(pdfEnabled ? "PDF: card creata sul desk." : "PDF: card creata (anteprima disabilitata).");
     });
 
     $("#addTextBtn").addEventListener("click", ()=>{
@@ -1328,11 +1348,30 @@
     $("#modeConnect").addEventListener("click", ()=> setMode("connect"));
     $("#modeDelete").addEventListener("click", ()=> setMode("delete"));
 
+    // ---------- Self-tests (console) ----------
+    function runSelfTests(){
+      try{
+        console.assert(typeof uid() === "string" && uid().length > 10, "uid() dovrebbe generare una stringa non banale");
+        console.assert(getYouTubeEmbed("https://youtu.be/dQw4w9WgXcQ")?.includes("/embed/"), "getYouTubeEmbed(youtu.be)" );
+        console.assert(getYouTubeEmbed("https://www.youtube.com/watch?v=dQw4w9WgXcQ")?.includes("/embed/"), "getYouTubeEmbed(youtube.com?v=)" );
+        // pdfEnabled può essere false: l'importante è che non crashi.
+        console.assert(typeof pdfEnabled === "boolean", "pdfEnabled deve essere boolean" );
+      }catch(e){
+        console.warn("Self-tests: errore", e);
+      }
+    }
+
     // ---------- Init ----------
     resetView();
     renderSources();
     renderCards();
     setMode("select");
+    runSelfTests();
+
+    if(!pdfEnabled){
+      // Avviso soft: non blocca nulla.
+      showToast("Nota: PDF.js non caricato — i PDF si aprono comunque in nuova scheda.");
+    }
   </script>
 </body>
 </html>
