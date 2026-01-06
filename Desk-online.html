@@ -527,16 +527,6 @@
     }
     .toast.show{ display:block; }
 
-    .kbd{
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono";
-      font-size:11px;
-      padding:2px 6px;
-      border-radius: 8px;
-      border:1px solid rgba(255,255,255,.14);
-      background: rgba(255,255,255,.08);
-      color: rgba(255,255,255,.78);
-    }
-
     /* Hide default file input look */
     input[type="file"]{ display:none; }
   </style>
@@ -544,7 +534,6 @@
 
 <body>
   <div class="app">
-    <!-- LEFT: Sources / Import -->
     <aside class="left">
       <div class="topbar">
         <div>
@@ -582,7 +571,7 @@
 
           <div class="row">
             <div class="note">
-              Suggerimento: per web/video usa link “diretti”. Alcuni siti bloccano l’iframe: in quel caso apri dal viewer in una nuova scheda.
+              Nota: alcuni siti bloccano l’iframe (CSP / X-Frame-Options). In quel caso usa “Apri in nuova scheda” nel viewer.
             </div>
           </div>
         </div>
@@ -600,13 +589,10 @@
           </div>
         </div>
 
-        <div class="sources" id="sourcesList" aria-label="Fonti">
-          <!-- source items -->
-        </div>
+        <div class="sources" id="sourcesList" aria-label="Fonti"></div>
       </div>
     </aside>
 
-    <!-- MAIN: Desk -->
     <main class="main">
       <div class="topbar">
         <div class="seg">
@@ -618,7 +604,7 @@
           </div>
 
           <span class="chip">Zoom: <strong id="zoomPct">100%</strong></span>
-          <span class="chip">Suggerimento: pinch su iPad • wheel su desktop</span>
+          <span class="chip">Pinch su iPad • wheel su desktop</span>
         </div>
 
         <div class="seg">
@@ -635,8 +621,8 @@
         <span class="chip">Tap su una card: <strong>apri</strong></span>
         <span class="chip">Trascina header: <strong>sposta</strong></span>
         <span class="chip">Angolo in basso: <strong>ridimensiona</strong></span>
-        <span class="chip">Modalità Connetti: <strong>clic 2 card</strong></span>
-        <span class="chip">Modalità Cancella: <strong>clic card/linea</strong></span>
+        <span class="chip">Connetti: <strong>tocca 2 card</strong></span>
+        <span class="chip">Cancella: <strong>tocca card/linea</strong></span>
       </div>
 
       <div class="mainBody">
@@ -644,16 +630,13 @@
           <div class="deskContent" id="deskContent">
             <div class="gridLayer"></div>
             <svg class="svgLayer" id="svgLayer" xmlns="http://www.w3.org/2000/svg"></svg>
-            <!-- cards injected here -->
           </div>
-
           <div class="toast" id="toast"></div>
         </div>
       </div>
     </main>
   </div>
 
-  <!-- Modal viewer -->
   <div class="modal" id="modal">
     <div class="modalBox">
       <div class="modalTop">
@@ -671,7 +654,6 @@
 
   <script>
     // ---------- PDF.js setup ----------
-    // pdfjsLib is global from CDN
     pdfjsLib.GlobalWorkerOptions.workerSrc =
       "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.7.76/build/pdf.worker.min.js";
 
@@ -690,17 +672,34 @@
 
     function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
 
+    // IMPORTANT FIX:
+    // Our transforms are relative to #deskViewport, but pointer events use window client coords.
+    // So we must convert clientX/clientY <-> viewport-local coords using getBoundingClientRect().
+    const deskViewport = $("#deskViewport");
+    const deskContent  = $("#deskContent");
+    const svgLayer     = $("#svgLayer");
+    const sourcesList  = $("#sourcesList");
+
+    function viewportRect(){
+      return deskViewport.getBoundingClientRect();
+    }
+
     function screenToDesk(pt){
-      // pt: {x,y} in viewport coords
+      // pt is WINDOW client coords (clientX/clientY)
+      const r = viewportRect();
+      const localX = pt.x - r.left;
+      const localY = pt.y - r.top;
       return {
-        x: (pt.x - view.tx) / view.scale,
-        y: (pt.y - view.ty) / view.scale
+        x: (localX - view.tx) / view.scale,
+        y: (localY - view.ty) / view.scale
       };
     }
+
     function deskToScreen(pt){
+      const r = viewportRect();
       return {
-        x: pt.x * view.scale + view.tx,
-        y: pt.y * view.scale + view.ty
+        x: r.left + pt.x * view.scale + view.tx,
+        y: r.top  + pt.y * view.scale + view.ty
       };
     }
 
@@ -714,7 +713,6 @@
         if(u.hostname.includes("youtube.com")){
           const id = u.searchParams.get("v");
           if(id) return `https://www.youtube.com/embed/${id}`;
-          // shorts
           if(u.pathname.startsWith("/shorts/")){
             const id2 = u.pathname.split("/shorts/")[1].split(/[/?#]/)[0];
             return `https://www.youtube.com/embed/${id2}`;
@@ -763,29 +761,30 @@
       return bytes.buffer;
     }
 
+    function escapeHtml(str){
+      return (str || "").replace(/[&<>\"']/g, (m)=>({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+      }[m]));
+    }
+
     // ---------- State ----------
-    const sources = [];     // deposit
-    const cards = [];       // desk cards
-    const connectors = [];  // {id, a:cardId, b:cardId, color}
+    const sources = [];
+    const cards = [];
+    const connectors = [];
     let selectedCardId = null;
 
     const view = {
       scale: 1,
-      tx: 60,  // screen px
+      tx: 60,
       ty: 60
     };
 
     const app = {
       mode: "select", // select | pan | connect | delete
       connectFirst: null,
-      pointers: new Map(), // for pinch / pan
+      pointers: new Map(),
       pinch: null
     };
-
-    const deskViewport = $("#deskViewport");
-    const deskContent  = $("#deskContent");
-    const svgLayer     = $("#svgLayer");
-    const sourcesList  = $("#sourcesList");
 
     function updateCounts(){
       $("#counts").textContent = cards.length;
@@ -838,7 +837,6 @@
         const t = document.createElement("div");
         t.className = "thumb";
 
-        // thumbnails
         if(s.type === "image"){
           const img = new Image();
           img.src = s.dataUrl;
@@ -894,7 +892,6 @@
     }
 
     function renderCards(){
-      // Remove existing card nodes (keep grid & svg)
       $$(".card", deskContent).forEach(n => n.remove());
 
       for(const c of cards){
@@ -907,7 +904,6 @@
         el.style.width  = c.w + "px";
         el.style.height = c.h + "px";
 
-        // Header
         const header = document.createElement("div");
         header.className = "cardHeader";
 
@@ -946,7 +942,6 @@
         header.appendChild(lefty);
         header.appendChild(btns);
 
-        // Body
         const body = document.createElement("div");
         body.className = "cardBody";
         const prev = document.createElement("div");
@@ -995,10 +990,8 @@
         el.appendChild(body);
         el.appendChild(handle);
 
-        // Interactions
         el.addEventListener("pointerdown", (e)=> onCardPointerDown(e, c.id, header, handle));
         el.addEventListener("click", (e)=> {
-          // avoid click when dragging or pressing buttons
           if(e.defaultPrevented) return;
           if(app.mode === "delete"){
             deleteCard(c.id);
@@ -1008,7 +1001,6 @@
             connectClick(c.id);
             return;
           }
-          // normal open on tap/click (but not if clicking header buttons)
           if(e.target.classList.contains("iconBtn")) return;
           openCard(c.id);
         });
@@ -1021,7 +1013,6 @@
     }
 
     function renderConnectors(){
-      // svg covers 8000x8000 desk space
       svgLayer.setAttribute("viewBox", "0 0 8000 8000");
       svgLayer.innerHTML = "";
 
@@ -1036,14 +1027,23 @@
         const by = b.y + b.h/2;
 
         const dx = Math.abs(bx-ax);
-        const dy = Math.abs(by-ay);
         const c1x = ax + (bx>ax ? dx*0.35 : -dx*0.35);
         const c1y = ay;
         const c2x = bx - (bx>ax ? dx*0.35 : -dx*0.35);
         const c2y = by;
 
-        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
         const d = `M ${ax} ${ay} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${bx} ${by}`;
+
+        const glow = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        glow.setAttribute("d", d);
+        glow.setAttribute("fill", "none");
+        glow.setAttribute("stroke", cn.color || "#6ae4ff");
+        glow.setAttribute("stroke-width", "14");
+        glow.setAttribute("stroke-linecap", "round");
+        glow.setAttribute("opacity", "0.12");
+        glow.style.pointerEvents = "none";
+
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
         path.setAttribute("d", d);
         path.setAttribute("fill", "none");
         path.setAttribute("stroke", cn.color || "#6ae4ff");
@@ -1063,25 +1063,9 @@
           }
         });
 
-        // add a subtle glow stroke behind
-        const glow = document.createElementNS("http://www.w3.org/2000/svg", "path");
-        glow.setAttribute("d", d);
-        glow.setAttribute("fill", "none");
-        glow.setAttribute("stroke", cn.color || "#6ae4ff");
-        glow.setAttribute("stroke-width", "14");
-        glow.setAttribute("stroke-linecap", "round");
-        glow.setAttribute("opacity", "0.12");
-        glow.style.pointerEvents = "none";
-
         svgLayer.appendChild(glow);
         svgLayer.appendChild(path);
       }
-    }
-
-    function escapeHtml(str){
-      return (str || "").replace(/[&<>"']/g, (m)=>({
-        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
-      }[m]));
     }
 
     // ---------- Card operations ----------
@@ -1089,7 +1073,11 @@
       const s = sources.find(x=>x.id===sourceId);
       if(!s) return;
 
-      const center = screenToDesk({x: deskViewport.clientWidth/2, y: deskViewport.clientHeight/2});
+      // FIX: use WINDOW coords at center of deskViewport
+      const r = viewportRect();
+      const centerClient = { x: r.left + r.width/2, y: r.top + r.height/2 };
+      const center = screenToDesk(centerClient);
+
       const card = {
         id: uid(),
         type: s.type,
@@ -1103,7 +1091,7 @@
       if(s.type==="image"){
         card.dataUrl = s.dataUrl;
       }else if(s.type==="pdf"){
-        card.pdfBase64 = s.pdfBase64;  // raw PDF bytes base64
+        card.pdfBase64 = s.pdfBase64;
         card.fileName = s.fileName || "documento.pdf";
         card.thumbDataUrl = s.thumbDataUrl || null;
       }else if(s.type==="text"){
@@ -1121,7 +1109,6 @@
     }
 
     function deleteCard(cardId){
-      // remove connectors attached
       for(let i=connectors.length-1;i>=0;i--){
         if(connectors[i].a===cardId || connectors[i].b===cardId) connectors.splice(i,1);
       }
@@ -1159,7 +1146,6 @@
         showToast("Scegli una card diversa.");
         return;
       }
-      // create connector
       const exists = connectors.some(cn =>
         (cn.a===app.connectFirst && cn.b===cardId) || (cn.a===cardId && cn.b===app.connectFirst)
       );
@@ -1189,13 +1175,11 @@
     let drag = null;
 
     function onCardPointerDown(e, cardId, headerEl, handleEl){
-      // avoid actions when clicking header buttons
       if(e.target.classList.contains("iconBtn")) return;
 
       const c = cards.find(x=>x.id===cardId);
       if(!c) return;
 
-      // In delete mode: handled by click
       if(app.mode === "delete") return;
       if(app.mode === "connect") return;
 
@@ -1209,8 +1193,7 @@
       e.preventDefault();
       e.stopPropagation();
 
-      const startScreen = {x:e.clientX, y:e.clientY};
-      const startDesk = screenToDesk(startScreen);
+      const startDesk = screenToDesk({x:e.clientX, y:e.clientY});
 
       drag = {
         cardId,
@@ -1247,9 +1230,9 @@
         renderConnectors();
       };
 
-      const onUp = (ev)=>{
+      const onUp = ()=>{
         if(!drag) return;
-        try{ e.currentTarget.releasePointerCapture(e.pointerId); }catch(_){}
+        try{ e.currentTarget.releasePointerCapture(e.pointerId); }catch(_){ }
         drag = null;
         window.removeEventListener("pointermove", onMove);
         window.removeEventListener("pointerup", onUp);
@@ -1261,12 +1244,11 @@
 
     // ---------- Desk pan / zoom ----------
     deskViewport.addEventListener("pointerdown", (e)=>{
-      // ignore if clicking on a card
       if(e.target.closest(".card")) return;
 
-      // Track pointers for pinch
       deskViewport.setPointerCapture(e.pointerId);
       app.pointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
+
       if(app.pointers.size === 2){
         const pts = Array.from(app.pointers.values());
         const dist = Math.hypot(pts[1].x-pts[0].x, pts[1].y-pts[0].y);
@@ -1279,7 +1261,6 @@
           mid
         };
       }else{
-        // Single pointer pan if mode pan
         if(app.mode === "pan"){
           app.pinch = app.pinch || {};
           app.pinch.panStart = {x:e.clientX, y:e.clientY, tx:view.tx, ty:view.ty};
@@ -1289,10 +1270,8 @@
 
     deskViewport.addEventListener("pointermove", (e)=>{
       if(!app.pointers.has(e.pointerId)) return;
-
       app.pointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
 
-      // Pinch zoom (2 pointers)
       if(app.pointers.size === 2 && app.pinch){
         e.preventDefault();
         const pts = Array.from(app.pointers.values());
@@ -1302,11 +1281,10 @@
         const factor = dist / app.pinch.startDist;
         const newScale = clamp(app.pinch.startScale * factor, 0.35, 2.5);
 
-        // zoom around midpoint
-        // Keep desk point under mid stable
         const before = screenToDesk(mid);
         view.scale = newScale;
         const after = screenToDesk(mid);
+
         view.tx += (after.x - before.x) * view.scale;
         view.ty += (after.y - before.y) * view.scale;
 
@@ -1314,7 +1292,6 @@
         return;
       }
 
-      // Pan (single pointer) only in pan mode
       if(app.mode === "pan" && app.pinch && app.pinch.panStart){
         e.preventDefault();
         const p0 = app.pinch.panStart;
@@ -1330,13 +1307,11 @@
       app.pointers.delete(e.pointerId);
       if(app.pointers.size < 2) app.pinch = null;
     });
-
     deskViewport.addEventListener("pointercancel", (e)=>{
       app.pointers.delete(e.pointerId);
       if(app.pointers.size < 2) app.pinch = null;
     });
 
-    // wheel zoom for desktop
     deskViewport.addEventListener("wheel", (e)=>{
       e.preventDefault();
       const delta = -e.deltaY;
@@ -1348,14 +1323,12 @@
       view.scale = clamp(view.scale * zoom, 0.35, 2.5);
 
       const after = screenToDesk(mouse);
-      // shift to keep point stable
       view.tx += (after.x - before.x) * view.scale;
       view.ty += (after.y - before.y) * view.scale;
 
       applyTransform();
     }, {passive:false});
 
-    // Click on background
     deskViewport.addEventListener("click", (e)=>{
       if(e.target.closest(".card")) return;
       if(app.mode === "connect"){
@@ -1392,11 +1365,12 @@
       }
       else if(c.type === "web"){
         const url = c.url;
-        const wrap = document.createElement("div");
-        wrap.innerHTML = `<iframe sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
-                           referrerpolicy="no-referrer"
-                           src="${escapeHtml(url)}"></iframe>`;
-        viewer.appendChild(wrap.firstChild);
+        const iframe = document.createElement("iframe");
+        iframe.src = url;
+        iframe.setAttribute("sandbox", "allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox");
+        iframe.referrerPolicy = "no-referrer";
+        iframe.allowFullscreen = true;
+        viewer.appendChild(iframe);
 
         $("#modalOpenNewTab").style.display = "inline-flex";
         $("#modalOpenNewTab").onclick = ()=> window.open(url, "_blank", "noopener,noreferrer");
@@ -1417,7 +1391,6 @@
           v.playsInline = true;
           viewer.appendChild(v);
         }else{
-          // fallback: try iframe
           const iframe = document.createElement("iframe");
           iframe.src = url;
           iframe.allow = "autoplay; encrypted-media; fullscreen";
@@ -1429,16 +1402,14 @@
         }
       }
       else if(c.type === "pdf"){
-        const wrap = document.createElement("div");
-        wrap.className = "pdfWrap";
-        wrap.innerHTML = `<div class="note" style="padding:6px 2px 10px 2px;">
-          PDF multipagina: scroll verticale. Se il tuo iPad apre il PDF in viewer esterno, usa “Apri in nuova scheda”.
-        </div>`;
-        viewer.appendChild(wrap);
+        const note = document.createElement("div");
+        note.className = "note";
+        note.style.padding = "6px 2px 10px 2px";
+        note.textContent = "PDF multipagina: scroll verticale.";
+        viewer.appendChild(note);
 
         $("#modalOpenNewTab").style.display = "inline-flex";
         $("#modalOpenNewTab").onclick = ()=>{
-          // If from base64, open blob in new tab
           const buf = base64ToArrayBuffer(c.pdfBase64);
           const blob = new Blob([buf], {type:"application/pdf"});
           const urlObj = URL.createObjectURL(blob);
@@ -1467,8 +1438,6 @@
 
         for(let pageNum=1; pageNum<=pdf.numPages; pageNum++){
           const page = await pdf.getPage(pageNum);
-
-          // choose scale based on page width vs container
           const viewport = page.getViewport({scale: 1});
           const maxW = Math.min(980, mount.clientWidth - 60);
           const scale = maxW / viewport.width;
@@ -1478,7 +1447,7 @@
           canvas.width = Math.floor(vp.width);
           canvas.height = Math.floor(vp.height);
 
-          const ctx = canvas.getContext("2d", {alpha:false});
+          const ctx = canvas.getPcontext ? canvas.getPcontext("2d", {alpha:false}) : canvas.getContext("2d", {alpha:false});
           await page.render({canvasContext: ctx, viewport: vp}).promise;
 
           const box = document.createElement("div");
@@ -1491,7 +1460,7 @@
         const msg = document.createElement("div");
         msg.className = "note";
         msg.style.padding = "12px";
-        msg.textContent = "Errore nel rendering PDF. Puoi comunque aprirlo in nuova scheda dal pulsante in alto.";
+        msg.textContent = "Errore nel rendering PDF. Puoi aprirlo in nuova scheda.";
         mount.appendChild(msg);
       }
     }
@@ -1523,7 +1492,6 @@
       const arrayBuf = await file.arrayBuffer();
       const pdfBase64 = arrayBufferToBase64(arrayBuf);
 
-      // Create a thumbnail (first page) using pdf.js
       let thumbDataUrl = null;
       try{
         const pdf = await pdfjsLib.getDocument({data: arrayBuf}).promise;
@@ -1574,13 +1542,7 @@
     $("#addWebBtn").addEventListener("click", ()=>{
       const url = $("#webUrl").value.trim();
       if(!url){ showToast("Inserisci un URL."); return; }
-      sources.push({
-        id: uid(),
-        type: "web",
-        title: "Web",
-        desc: url,
-        url
-      });
+      sources.push({ id: uid(), type: "web", title: "Web", desc: url, url });
       $("#webUrl").value = "";
       renderSources();
       showToast("Pagina web aggiunta alle fonti.");
@@ -1589,13 +1551,7 @@
     $("#addVideoBtn").addEventListener("click", ()=>{
       const url = $("#videoUrl").value.trim();
       if(!url){ showToast("Inserisci un URL."); return; }
-      sources.push({
-        id: uid(),
-        type: "video",
-        title: "Video",
-        desc: url,
-        url
-      });
+      sources.push({ id: uid(), type: "video", title: "Video", desc: url, url });
       $("#videoUrl").value = "";
       renderSources();
       showToast("Video aggiunto alle fonti.");
@@ -1608,7 +1564,6 @@
         exportedAt: new Date().toISOString(),
         cards: cards.map(c => ({...c})),
         connectors: connectors.map(cn => ({...cn})),
-        // view not auto-restored (desk must open empty), but included for convenience
         view: {...view}
       };
       downloadText(`desk-export-${Date.now()}.json`, JSON.stringify(payload, null, 2));
@@ -1622,19 +1577,13 @@
       try{
         const text = await file.text();
         const payload = JSON.parse(text);
-
         if(!payload || !Array.isArray(payload.cards)) throw new Error("Formato non valido.");
 
-        // Replace current desk (but still: app opens empty by default; this is explicit load)
         cards.length = 0;
         connectors.length = 0;
 
-        for(const c of payload.cards){
-          cards.push(c);
-        }
-        for(const cn of (payload.connectors || [])){
-          connectors.push(cn);
-        }
+        for(const c of payload.cards) cards.push(c);
+        for(const cn of (payload.connectors || [])) connectors.push(cn);
 
         selectedCardId = null;
         renderCards();
@@ -1665,7 +1614,6 @@
     $("#modeDelete").addEventListener("click", ()=> setMode("delete"));
 
     // ---------- Init ----------
-    // Open always clean: no auto-load.
     resetView();
     renderSources();
     renderCards();
