@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Index</title>
+<style>
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+#container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+#mainImage {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+}
+
+/* Aree cliccabili */
+.area {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    width: 50%;
+    cursor: pointer;
+}
+
+#leftArea {
+    left: 0;
+}
+
+#rightArea {
+    right: 0;
+}
+
+/* opzionale: evidenzia al passaggio del mouse */
+.area:hover {
+    background: rgba(255,255,255,0.05);
+}
+</style>
+</head>
+<body>
+
+<div id="container">
+    <img id="mainImage" src="IMG_4025.png" alt="Costruisci / Visualizza">
+
+    <div id="leftArea" class="area" onclick="goPresentazione()"></div>
+    <div id="rightArea" class="area" onclick="goStudioDesk()"></div>
+</div>
+
+<script>
+function goPresentazione() {
+    window.location.href = "presentazione.html";
+}
+
+function goStudioDesk() {
+    window.location.href = "Studio-desk.html";
+}
+</script>
+
+</body>
+</html>
